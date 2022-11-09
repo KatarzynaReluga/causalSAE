@@ -5,7 +5,7 @@ Authors@R: c(
     person(given = "Katarzyna",
            family = "Reluga",
            role = c("aut", "cre"),
-           email = "katarzyna.reluga@utoronto.ca",
+           email = "katarzyna.reluga@berkeley.edu",
            comment = c(ORCID = "0000-0001-9651-5030")),
 	person(given = " one",
            family = " one",
@@ -21,15 +21,14 @@ License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
-	data.table (>= 1.12.2),
 	dplyr (>= 1.0.7),
-	ggplot2 (>= 3.3.4),
 	grf (>= 2.0.2),
 	lme4 (>= 1.1-27.1),
 	mgcv (>= 1.8-38),
 	mquantreg (>= 0.1.0),
 	sampling (>= 2.9),
-	stats (>= 4.0.3)
+	stats (>= 4.0.3),
+	xgboost (>= 1.6.0)
 Suggests: 
     testthat (>= 3.0.0)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
