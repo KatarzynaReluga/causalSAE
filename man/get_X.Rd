@@ -9,38 +9,38 @@
 \usage{
 get_X(...)
 
-\method{get_X}{norm}(cov_type, n, p, covariance_norm, start_seed, ...)
+\method{get_X}{norm}(cov_type, n, p, covariance_norm, seed, ...)
 
-\method{get_X}{lognorm}(cov_type, n, p, covariance_norm, start_seed, ...)
+\method{get_X}{lognorm}(cov_type, n, p, covariance_norm, seed, ...)
 
-\method{get_X}{unif}(cov_type, n, p, covariance_norm, start_seed, ...)
+\method{get_X}{unif}(cov_type, n, p, covariance_norm, seed, ...)
 }
 \arguments{
 \item{...}{Additional parameters}
 
-\item{cov_type}{Type of coefficients}
+\item{cov_type}{Type of coefficients.}
 
-\item{n}{Number of observations}
+\item{n}{Number of observations.}
 
-\item{p}{Number of coefficients}
+\item{p}{Number of coefficients.}
 
 \item{covariance_norm}{Variance-covariance matrix for
-correlated normally distributed covariates}
+correlated normally distributed covariates.}
 
-\item{start_seed}{Seed to run simulations}
+\item{seed}{Seed to run simulations.}
 }
 \value{
 A data frame with generated population
 }
 \description{
-This is a generic function to generate covariate \code{X} from normal, log-normal or uniform distribution
+Generic function to generate covariate \code{X} from normal, log-normal or uniform distribution
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{norm}: Generate covariate from normal distribution
+\item \code{norm}: Generate covariate from normal distribution.
 
-\item \code{lognorm}: Generate covariate from log-normal distribution
+\item \code{lognorm}: Generate covariate from log-normal distribution.
 
-\item \code{unif}: Generate covariate from uniform distribution
+\item \code{unif}: Generate covariate from uniform distribution.
 }}
 

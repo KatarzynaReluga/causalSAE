@@ -18,7 +18,7 @@ gen_outcome(...)
   Ni,
   m,
   rand_eff_outcome,
-  start_seed = 1,
+  seed = 1,
   ...
 )
 
@@ -31,7 +31,7 @@ gen_outcome(...)
   Ni,
   m,
   rand_eff_outcome,
-  start_seed = 1,
+  seed = 1,
   ...
 )
 
@@ -44,7 +44,7 @@ gen_outcome(...)
   Ni,
   m,
   rand_eff_outcome,
-  start_seed = 1,
+  seed = 1,
   ...
 )
 }
@@ -57,40 +57,40 @@ gen_outcome(...)
 
 \item{errors_outcome}{List of parameters to generate errors, that is:
 \itemize{
-\item var_e
-\item mean_e
-\item frac_out
-\item var_e_out
-\item mean_e_out
-\item disturbance_outcome
+\item var_e - variance of errors,
+\item mean_e - mean of errors,
+\item frac_out - fraction of outlying errors,
+\item var_e_out - variance of outlying errors,
+\item mean_e_out - mean of outlying errors,
+\item disturbance_outcome - shift parameter to generate outlying observations.
 }}
 
-\item{coeffs}{List of coefficients for generating outcomes and propensity scores, tat is:
+\item{coeffs}{List of coefficients for generating outcomes and propensity scores, that is:
 \itemize{
-\item intercept_outcome
-\item intercept_p_score
-\item coef_outcome
-\item coef_p_score
-\item mean_A
-\item var_A
+\item intercept_outcome - intercept for outcome regression model.
+\item intercept_p_score - intercept for propensity score model.
+\item coef_outcome - coefficients for outcome regression model.
+\item coef_p_score - coefficients for propensity score model.
+\item mean_A - mean of coefficients of treatments across different areas.
+\item var_A - variance of coefficients of treatments across different areas.
 }}
 
 \item{A}{Treatment status}
 
 \item{Ni}{Number of units in areas}
 
-\item{m}{Number of subpopulations}
+\item{m}{Number of subpopulations.}
 
 \item{rand_eff_outcome}{List of parameters to generate random effects for outcome model, that is:
 \itemize{
-\item var_re
-\item mean_re
-\item frac_out
-\item var_re_out
-\item mean_re_out
+\item var_re - variance of random effects,
+\item mean_re - mean of random effects,
+\item frac_out - fraction of outlying random effects,
+\item var_re_out - variance of outlying random effects,
+\item mean_re_out - mean of outlying random effects.
 }}
 
-\item{start_seed}{Seed to replicate simulations}
+\item{seed}{Seed to replicate simulations.}
 }
 \value{
 A data frame with generated population

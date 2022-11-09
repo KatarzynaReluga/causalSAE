@@ -12,28 +12,28 @@ generate_re(
   frac_out,
   var_re_out,
   mean_re_out,
-  start_seed = 1
+  seed = 1
 )
 }
 \arguments{
-\item{n}{Number of random effects}
+\item{n}{Number of random effects.}
 
-\item{type_re}{Type of the random elements: random_effects, errors}
+\item{type_re}{Type of the random elements: random_effects, errors.}
 
-\item{var_re}{Variance of random effects}
+\item{var_re}{Variance of random effects.}
 
-\item{mean_re}{Mean of random effects}
+\item{mean_re}{Mean of random effects.}
 
-\item{frac_out}{Fraction of outlying random effects}
+\item{frac_out}{Fraction of outlying random effects.}
 
-\item{var_re_out}{Variance of outlying random effects}
+\item{var_re_out}{Variance of outlying random effects.}
 
-\item{mean_re_out}{Variance of outlying random effects}
+\item{mean_re_out}{Mean of outlying random effects.}
 
-\item{start_seed}{Seed to replicate simulations}
+\item{seed}{Seed to replicate simulations.}
 }
 \value{
-\item{re}{Vector of random effects or errors with outliers}
+Vector of random effects or errors with outliers.
 }
 \description{
 This is an internal function to generate random effects or errors from

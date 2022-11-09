@@ -2,19 +2,63 @@
 % Please edit documentation in R/calculate_tau.R
 \name{calculate_tau}
 \alias{calculate_tau}
-\title{Calculate true causal effect}
+\title{Calculate causal effect}
 \usage{
-calculate_tau(populations, type_tau = c("regular", "adaptive"))
+calculate_tau(populations, type_tau = c("HT", "H", "AIPW"))
 }
 \arguments{
 \item{populations}{List with one or several populations}
 
-\item{type_tau}{Type of computation, \code{regular}: constant weights,
-\code{adaptive}: adaptive weights}
+\item{type_tau}{Type of computation, \code{HT}: Horvitz–Thompson-type estimator,
+\code{H}: Hajek-type estimator, \code{AIPW}: augmented inverse-propensity score-type estimator.}
 }
 \value{
-\item{tau_true}{List with taus accross small areas}
+List with causal effects across sub-populations.
 }
 \description{
-This function calculates causal area effect tau
+This function calculates causal sub-population effect tau.
+}
+\examples{
+
+m = 50
+ni = rep(5, m)
+Ni = rep(100, m)
+N = sum(Ni)
+n = sum(ni)
+
+X <- generate_X(
+ n = N,
+ p = 1,
+ covariance_norm = NULL,
+ cov_type = "unif",
+ seed = 1
+)
+
+
+X_outcome <- generate_X(
+ n = N,
+ p = 1,
+ covariance_norm = NULL,
+ cov_type = "lognorm",
+ seed = 1
+)
+
+
+populations <- generate_pop(X, X_outcome,
+coeffs = get_default_coeffs(),
+errors_outcome = get_default_errors_outcome(),
+rand_eff_outcome = get_default_rand_eff_outcome(),
+rand_eff_p_score = get_default_rand_eff_p_score(),
+regression_type = "continuous",
+Ni_size  = 100,
+m = 50,
+no_sim = 1,
+seed = 1)
+
+tau_HT <- calculate_tau(populations, type_tau = "HT")
+
+tau_H <- calculate_tau(populations, type_tau = "H")
+
+# Add for AIPW
+
 }

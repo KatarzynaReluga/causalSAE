@@ -9,23 +9,23 @@ generate_X(
   p = 2,
   covariance_norm = NULL,
   cov_type = c("norm", "lognorm", "unif"),
-  start_seed = 1
+  seed = 1
 )
 }
 \arguments{
-\item{n}{Number of observations}
+\item{n}{Number of observations.}
 
-\item{p}{Number of coefficients}
+\item{p}{Number of coefficients.}
 
 \item{covariance_norm}{Variance-covariance matrix for
-correlated normally distributed covariates}
+correlated normally distributed covariates.}
 
-\item{cov_type}{Type of coefficients}
+\item{cov_type}{Type of coefficients.}
 
-\item{start_seed}{Seed to run simulations}
+\item{seed}{Seed to run simulations.}
 }
 \value{
-Matrix of generated covariates
+Matrix of generated covariates.
 }
 \description{
 Wrapper function to generate covariates
@@ -38,7 +38,7 @@ n = 10,
 p = 2,
 covariance_norm = NULL,
 cov_type = c("norm"),
-              start_seed = 1)
+              seed = 1)
 
 
 # Generate X from log-normal distribution
@@ -47,7 +47,7 @@ n = 10,
 p = 2,
 covariance_norm = NULL,
 cov_type = c("lognorm"),
-              start_seed = 1)
+              seed = 1)
 
 
 # Generate X from uniform distribution
@@ -56,8 +56,7 @@ n = 10,
 p = 2,
 covariance_norm = NULL,
 cov_type = c("unif"),
-              start_seed = 1)
-
+              seed = 1)
 
 
 

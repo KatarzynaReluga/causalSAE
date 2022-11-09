@@ -5,18 +5,18 @@
 #' passed into the function are already checked, so we do not recommend to
 #' use this function separately.
 #'
-#' @param n Number of random effects
-#' @param type_re Type of the random elements: random_effects, errors
-#' @param var_re Variance of random effects
-#' @param mean_re Mean of random effects
-#' @param frac_out Fraction of outlying random effects
-#' @param var_re_out Variance of outlying random effects
-#' @param mean_re_out Variance of outlying random effects
-#' @param start_seed Seed to replicate simulations
-#' 
+#' @param n Number of random effects.
+#' @param type_re Type of the random elements: random_effects, errors.
+#' @param var_re Variance of random effects.
+#' @param mean_re Mean of random effects.
+#' @param frac_out Fraction of outlying random effects.
+#' @param var_re_out Variance of outlying random effects.
+#' @param mean_re_out Mean of outlying random effects.
+#' @param seed Seed to replicate simulations.
+#'
 #' @importFrom stats rnorm rbinom rpois rnbinom
 #'
-#' @return \item{re}{Vector of random effects or errors with outliers}
+#' @return Vector of random effects or errors with outliers.
 #'
 #' @export
 #'
@@ -29,8 +29,8 @@
 #' frac_out = 0.05,
 #' var_re_out = 20,
 #' mean_re_out = 0)
-#' 
-#' 
+#'
+#'
 #' random_effects <- generate_re(n = 100,
 #' type_re = "errors",
 #' var_re = 2,
@@ -38,7 +38,7 @@
 #' frac_out = 0.05,
 #' var_re_out = 20,
 #' mean_re_out = 0)
-#' 
+#'
 #'
 
 generate_re <- function(n,
@@ -48,15 +48,15 @@ generate_re <- function(n,
                         frac_out,
                         var_re_out,
                         mean_re_out,
-                        start_seed = 1) {
+                        seed = 1) {
   # Set seed
-  set.seed(start_seed)
-  
+  set.seed(seed)
+
   #Set type of random elements
   type_re  = match.arg(type_re)
-  
+
   if (type_re == "random_effects") {
-    
+
     # Outlying random effects only at the end
     if (frac_out > 0) {
       no_out = as.integer(frac_out * n)
@@ -71,10 +71,10 @@ generate_re <- function(n,
     # Outlying errors anywhere
 
       select_out_re = rbinom(n, 1, frac_out)
-    
+
       re <- (1 - select_out_re) * rnorm(n, mean_re, sqrt(var_re)) +
         select_out_re * rnorm(n, mean_re_out, sqrt(var_re_out))
- 
+
   }
   return(re)
 }
@@ -96,7 +96,7 @@ get_default_re <- function() {
     mean_out = 0
   )
   params_list
-  
+
 }
 
 #'
@@ -114,7 +114,7 @@ get_default_e <- function() {
     mean_out = 20
   )
   params_list
-  
+
 }
 
 
@@ -129,9 +129,9 @@ get_default_e <- function() {
 #' @param mu Mean of Poisson rv
 #' @param disturbance Shift parameter to generate outliers
 #' @param frac_out Fraction of outlying random effects
-#' @param start_seed Seed to replicate simulations
+#' @param seed Seed to replicate simulations
 #'
-#' @return \item{y_pois}{Vector of random effects with outliers}
+#' @return Vector of random effects with outliers.
 #'
 #' @importFrom stats rbinom rpois
 #'
@@ -142,15 +142,15 @@ generate_poisson <- function(n = 10,
                              mu = 1,
                              disturbance = 5,
                              frac_out = 0,
-                             start_seed = 1) {
-  set.seed(start_seed)
-  
-  
+                             seed = 1) {
+  set.seed(seed)
+
+
   select_out = rbinom(n, 1, frac_out)
-  
+
   y_pois <- (1 - select_out) * rpois(n, mu) +
     select_out * rpois(n, mu + disturbance)
-  
+
   return(y_pois)
 }
 
@@ -167,9 +167,9 @@ generate_poisson <- function(n = 10,
 #' @param size Parameter
 #' @param disturbance Shift parameter to generate outliers
 #' @param frac_out Fraction of outlying random effects
-#' @param start_seed Seed to replicate simulations
+#' @param seed Seed to replicate simulations
 #'
-#' @return \item{y_nb}{Vector of random effects with outliers}
+#' @return Vector of random effects with outliers.
 #'
 #' @importFrom stats rbinom rnbinom
 #'
@@ -181,17 +181,17 @@ generate_nb <- function(n = 10,
                         size = 1,
                         disturbance = 5,
                         frac_out = 0,
-                        start_seed = 1) {
-  set.seed(start_seed)
-  
+                        seed = 1) {
+  set.seed(seed)
+
   select_out = rbinom(n, 1, frac_out)
-  
+
   y_nb <-
     (1 - select_out) * rnbinom(n = n, mu = mu, size = size) +
     select_out * rnbinom(n = n,
                          mu = mu + disturbance,
                          size = size)
-  
+
   return(y_nb)
 }
 
@@ -207,9 +207,9 @@ generate_nb <- function(n = 10,
 #' @param p Vector of probabilities
 #' @param disturbance Vector of outlying probabilities
 #' @param frac_out Fraction of outlying random effects
-#' @param start_seed Seed to replicate simulations
+#' @param seed Seed to replicate simulations
 #'
-#' @return \item{y_binary}{Vector of random effects with outliers}
+#' @return Vector of random effects with outliers.
 #'
 #' @importFrom stats rbinom rpois
 #'
@@ -220,14 +220,13 @@ generate_binary <- function(n = 10,
                             p = 0.5,
                             disturbance = 0.6,
                             frac_out = 0,
-                            start_seed = 1) {
-  set.seed(start_seed)
-  
+                            seed = 1) {
+  set.seed(seed)
+
   select_out = rbinom(n, 1, frac_out)
-  
+
   y_binary <- (1 - select_out) * rbinom(n, 1, p) +
     select_out * rbinom(n, 1, disturbance)
-  
+
   return(y_binary)
 }
-

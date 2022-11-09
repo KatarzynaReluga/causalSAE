@@ -4,7 +4,7 @@
 \alias{generate_poisson}
 \title{Generate Poisson distributed rv with outliers}
 \usage{
-generate_poisson(n = 10, mu = 1, disturbance = 5, frac_out = 0, start_seed = 1)
+generate_poisson(n = 10, mu = 1, disturbance = 5, frac_out = 0, seed = 1)
 }
 \arguments{
 \item{n}{Number of errors (residuals)}
@@ -15,10 +15,10 @@ generate_poisson(n = 10, mu = 1, disturbance = 5, frac_out = 0, start_seed = 1)
 
 \item{frac_out}{Fraction of outlying random effects}
 
-\item{start_seed}{Seed to replicate simulations}
+\item{seed}{Seed to replicate simulations}
 }
 \value{
-\item{y_pois}{Vector of random effects with outliers}
+Vector of random effects with outliers.
 }
 \description{
 This is an internal function to generate errors from

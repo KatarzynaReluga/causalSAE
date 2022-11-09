@@ -4,14 +4,7 @@
 \alias{generate_nb}
 \title{Generate negative binomial distributed rv with outliers}
 \usage{
-generate_nb(
-  n = 10,
-  mu = 3,
-  size = 1,
-  disturbance = 5,
-  frac_out = 0,
-  start_seed = 1
-)
+generate_nb(n = 10, mu = 3, size = 1, disturbance = 5, frac_out = 0, seed = 1)
 }
 \arguments{
 \item{n}{Number of errors (residuals)}
@@ -24,10 +17,10 @@ generate_nb(
 
 \item{frac_out}{Fraction of outlying random effects}
 
-\item{start_seed}{Seed to replicate simulations}
+\item{seed}{Seed to replicate simulations}
 }
 \value{
-\item{y_nb}{Vector of random effects with outliers}
+Vector of random effects with outliers.
 }
 \description{
 This is an internal function to generate errors from

@@ -1,12 +1,11 @@
-
 #
 # Format matrix in a suitable way
 #
 
-format_data_matrix <- function(data, select_row = 1:nrow(data), 
-                               select_col = NULL, 
+format_data_matrix <- function(data, select_row = 1:nrow(data),
+                               select_col = NULL,
                                name_col = "X"){
-  
+
   if (is.null(select_col)){
     data_new <- data.matrix(data[select_row, ])
   } else {

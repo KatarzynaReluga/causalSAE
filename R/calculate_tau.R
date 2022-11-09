@@ -1,15 +1,13 @@
 #' Calculate causal effect
 #'
-#' This function calculates causal area effect tau
+#' This function calculates causal sub-population effect tau.
 #'
 #' @param populations List with one or several populations
-#' @param type_tau Type of computation, \code{regular}: constant weights,
-#' \code{adaptive}: adaptive weights
+#' @param type_tau Type of computation, \code{HT}: Horvitz–Thompson-type estimator,
+#' \code{H}: Hajek-type estimator, \code{AIPW}: augmented inverse-propensity score-type estimator.
 #'
 #' @return
-#' \item{tau_true}{List with taus accross small areas}
-#'
-#'
+#' List with causal effects across sub-populations.
 #'
 #' @importFrom stats aggregate
 #' @importFrom dplyr filter
@@ -18,7 +16,7 @@
 #'
 #' @examples
 #'
-#' #' m = 50
+#' m = 50
 #' ni = rep(5, m)
 #' Ni = rep(100, m)
 #' N = sum(Ni)
@@ -29,7 +27,7 @@
 #'  p = 1,
 #'  covariance_norm = NULL,
 #'  cov_type = "unif",
-#'  start_seed = 1
+#'  seed = 1
 #' )
 #'
 #'
@@ -38,7 +36,7 @@
 #'  p = 1,
 #'  covariance_norm = NULL,
 #'  cov_type = "lognorm",
-#'  start_seed = 1
+#'  seed = 1
 #' )
 #'
 #'
@@ -51,11 +49,16 @@
 #' Ni_size  = 100,
 #' m = 50,
 #' no_sim = 1,
-#' start_seed = 1)
+#' seed = 1)
 #'
+#' tau_HT <- calculate_tau(populations, type_tau = "HT")
+#'
+#' tau_H <- calculate_tau(populations, type_tau = "H")
+#'
+#' # Add for AIPW
 #'
 
-calculate_tau <- function(populations, type_tau = c("regular", "adaptive")) {
+calculate_tau <- function(populations, type_tau = c("HT", "H", "AIPW")) {
 
   if (is.data.frame(populations)) {
     populations <- list(populations)
@@ -76,14 +79,6 @@ calculate_tau <- function(populations, type_tau = c("regular", "adaptive")) {
       data_group
     }
     list_group <- lapply(list_group_name, filter_by_group)
-
-#    list_group <- list()
-#    m = length(unique(one_pop_df$group))
-#    A_coef = unique(one_pop_df$coef_A_repeat)
-
-#    for (i in unique(one_pop_df$group)) {
-#      list_group[[i]] <- filter(one_pop_df, group == i)
-#    }
 
     tau <- lapply(list_group, fct_treat_untreat, type_tau = type_tau)
     tau_subpopulations <- do.call(rbind.data.frame, tau)
@@ -110,19 +105,31 @@ fct_treat_untreat <- function(subpopulation, type_tau) {
   A = subpopulation$A
   p_score = subpopulation$p_score
 
+  mu0_y = subpopulation$mu0_y
+  res0_y = y - mu0_y
+
+  mu1_y = subpopulation$mu1_y
+  res1_y = y - mu1_y
+
   tau_treat_ind  <- (y * A) / p_score
+  tau_treat_AIPW <- (y * res1_y) / p_score + mu1_y
   weights_treat <- A / p_score
 
   tau_untreat_ind <- (y * (1 - A)) / (1 - p_score)
+  tau_untreat_AIPW <- (y * res0_y) / p_score + mu0_y
   weights_untreat <- (1 - A) / (1 - p_score)
 
-  if (type_tau == "regular") {
+  if (type_tau == "HT") {
     tau_treat <- mean(tau_treat_ind)
     tau_untreat <- mean(tau_untreat_ind)
     tau <- tau_treat - tau_untreat
- } else {
+ } else if (type_tau == "H") {
     tau_treat <- sum(tau_treat_ind) / sum(weights_treat)
     tau_untreat <- sum(tau_untreat_ind) / sum(weights_untreat)
+    tau <- tau_treat - tau_untreat
+ } else {
+    tau_treat <- mean(tau_treat_AIPW)
+    tau_untreat <- mean(tau_untreat_AIPW)
     tau <- tau_treat - tau_untreat
  }
 
@@ -132,5 +139,3 @@ fct_treat_untreat <- function(subpopulation, type_tau) {
 
   output
 }
-
-

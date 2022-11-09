@@ -17,7 +17,7 @@ generate_one_sample(
 \item{size_samples}{Sample sizes in each subpopulation/area}
 
 \item{sample_part}{Select sampled, non_sampled or both parts
-or population, default: sample_part = sampled}
+or population, default: \code{sample_part = sampled}.}
 
 \item{get_index}{Get the index of sampled observations}
 }

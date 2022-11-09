@@ -16,74 +16,74 @@ generate_pop(
   Ni_size = 100,
   m = 50,
   no_sim = 100,
-  start_seed = 1
+  seed = 1
 )
 }
 \arguments{
-\item{X}{Covariates for generating outcome and propensity score}
+\item{X}{Covariates for generating outcome and propensity score.}
 
-\item{X_outcome}{Covariates for generating outcome}
+\item{X_outcome}{Covariates for generating outcome.}
 
-\item{X_p_score}{Covariates for generating propensity score}
+\item{X_p_score}{Covariates for generating propensity score.}
 
-\item{coeffs}{List of coefficients for generating outcomes and propensity scores, tat is:
+\item{coeffs}{List of coefficients for generating outcomes and propensity scores, that is:
 \itemize{
-\item intercept_outcome
-\item intercept_p_score
-\item coef_outcome
-\item coef_p_score
-\item mean_A
-\item var_A
+\item intercept_outcome - intercept for outcome regression model.
+\item intercept_p_score - intercept for propensity score model.
+\item coef_outcome - coefficients for outcome regression model.
+\item coef_p_score - coefficients for propensity score model.
+\item mean_A - mean of coefficients of treatments across different areas.
+\item var_A - variance of coefficients of treatments across different areas.
 }}
 
 \item{errors_outcome}{List of parameters to generate errors, that is:
 \itemize{
-\item var_e
-\item mean_e
-\item frac_out
-\item var_e_out
-\item mean_e_out
-\item disturbance_outcome
+\item var_e - variance of errors,
+\item mean_e - mean of errors,
+\item frac_out - fraction of outlying errors,
+\item var_e_out - variance of outlying errors,
+\item mean_e_out - mean of outlying errors,
+\item disturbance_outcome - shift parameter to generate outlying observations.
 }}
 
 \item{rand_eff_outcome}{List of parameters to generate random effects for outcome model, that is:
 \itemize{
-\item var_re
-\item mean_re
-\item frac_out
-\item var_re_out
-\item mean_re_out
+\item var_re - variance of random effects,
+\item mean_re - mean of random effects,
+\item frac_out - fraction of outlying random effects,
+\item var_re_out - variance of outlying random effects,
+\item mean_re_out - mean of outlying random effects.
 }}
 
 \item{rand_eff_p_score}{List of parameters to generate random effects for propensity score model, that is:
 \itemize{
-\item var_re
-\item mean_re
-\item frac_out
-\item var_re_out
-\item mean_re_out
+\item var_re - variance of random effects,
+\item mean_re - mean of random effects,
+\item frac_out - fraction of outlying random effects,
+\item var_re_out - variance of outlying random effects,
+\item mean_re_out - mean of outlying random effects.
 }}
 
-\item{regression_type}{Type of outcomes}
+\item{regression_type}{Type of outcomes.}
 
-\item{Ni_size}{Vector of subpopulations sizes}
+\item{Ni_size}{Vector of subpopulations sizes.}
 
-\item{m}{Number of subpopulations}
+\item{m}{Number of subpopulations.}
 
-\item{no_sim}{Number of simulations}
+\item{no_sim}{Number of simulations.}
 
-\item{start_seed}{Seed to replicate simulations}
+\item{seed}{Seed to replicate simulations.}
 }
 \value{
-\item{populations}{List composed of data frames which contain covariates X,
-treatment status A, group indicator group, propensity score p_score, and outcome y}
+List composed of data frames which contain covariates X,
+treatment status A, group indicator group, propensity score p_score, and outcome y
 }
 \description{
-Generate populations
+Function to generate populations using parametric model assumptions.
 }
 \examples{
 
-m = 50 
+m = 50
 ni = rep(5, m)
 Ni = rep(100, m)
 N = sum(Ni)
@@ -94,7 +94,7 @@ X <- generate_X(
  p = 1,
  covariance_norm = NULL,
  cov_type = "unif",
- start_seed = 1
+ seed = 1
 )
 
 
@@ -103,25 +103,19 @@ X_outcome <- generate_X(
  p = 1,
  covariance_norm = NULL,
  cov_type = "lognorm",
- start_seed = 1
+ seed = 1
 )
 
 
 populations <- generate_pop(X, X_outcome,
-
 coeffs = get_default_coeffs(),
-
 errors_outcome = get_default_errors_outcome(),
-
 rand_eff_outcome = get_default_rand_eff_outcome(),
 rand_eff_p_score = get_default_rand_eff_p_score(),
-
 regression_type = "continuous",
 Ni_size  = 100,
 m = 50,
 no_sim = 100,
-start_seed = 1)
-
-
+seed = 1)
 
 }

@@ -22,7 +22,6 @@
 #'  seed = 1
 #' )
 #'
-#'
 #' X_outcome <- generate_X(
 #'  n = N,
 #'  p = 1,
@@ -30,7 +29,6 @@
 #'  cov_type = "lognorm",
 #'  seed = 1
 #' )
-#'
 #'
 #' populations <- generate_pop(X, X_outcome,
 #' coeffs = get_default_coeffs(),
@@ -46,12 +44,8 @@
 #' subpopulation <- sample_subpopulations(populations,
 #' frac_nc = 0.1, frac_nt = 0.1)
 #'
-#'
-#'
-
 
 sample_subpopulations <- function(one_pop, frac_nc, frac_nt) {
-
 
   one_pop_df <- data.frame(one_pop)
   one_pop_df$index <- 1:dim(one_pop_df)[1]
