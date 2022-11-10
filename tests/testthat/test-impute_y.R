@@ -1,10 +1,7 @@
-#context("Cross validation")
-#I commented context(), because I got this note:
-#`context()` was deprecated in the 3rd edition.
 #library(causalSAE)
 
-
 set.seed(123456)
+
 m = 50
 ni = rep(5, m)
 Ni = rep(100, m)
