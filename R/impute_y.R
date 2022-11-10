@@ -4,8 +4,8 @@
 #'
 #' @param data_sample Data from the sample.
 #' @param data_out_of_sample Data from the remaining part of population.
-#' @param model_formula Specification for the model link function in glmer().
-#' @param method Specification for the model link function in mquantreg().
+#' @param model_formula Model formula.
+#' @param method Estimation method, choose between: \code{EBLUP}, \code{MQ}, \code{RF}, \code{XGB}.
 #' @param type_model Type of outcome.
 #' @param tune_RF Tune parameters in random forest? Default = FALSE.
 #' @param xgboost_params List with parameters to run xgboost:

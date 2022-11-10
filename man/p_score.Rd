@@ -23,7 +23,7 @@ p_score(...)
 
 \item{obj_p_score}{Object defining propensity score fit.}
 
-\item{model_formula}{Formula to fit propensity score model.}
+\item{model_formula}{Specification for the model link function in glmer().}
 
 \item{tune_RF}{Tune parameters for fitting random forest? Default: \code{tune_RF = TRUE}.}
 

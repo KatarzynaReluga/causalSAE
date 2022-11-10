@@ -4,15 +4,13 @@
 #'
 #' @inheritParams impute_y
 #' @param obj_p_score Object defining propensity score fit.
-#' @param model_formula Formula to fit propensity score model.
-#' @param tune_RF Tune parameters for fitting random forest? Default: \code{tune_RF = TRUE}.
+#' @param tune_RF Tune parameters for fitting random forest? Default: \code{tune_RF = FALSE}.
 #' @param xgboost_params List of parameters to obtain predictions using gradient boosting:
 #'  \itemize{
 #'  \item CV_XGB - logical variable, use cross-validation for gradient boosting? Default: \code{CV_XGB = TRUE}.
 #'  \item nfolds - number of folds in cross-validation. Default: \code{nfolds = 5}.
 #'  \item nrounds - the max number of iterations. Default: \code{nrounds = 50}.
 #'  }
-#'
 #'
 #' @importFrom lme4 lmer glmer
 #' @importFrom stats terms binomial
@@ -165,7 +163,7 @@ p_score.MQ <- function(obj_p_score,
 
 p_score.RF <- function(obj_p_score,
                        model_formula,
-                       tune_RF, ...) {
+                       tune_RF = FALSE, ...) {
 
   data_p_score <- obj_p_score$data_p_score
 
