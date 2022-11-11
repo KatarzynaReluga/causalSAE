@@ -44,7 +44,52 @@
 #' @importFrom grf regression_forest
 #' @importFrom dplyr arrange select
 #'
-## #' @examples
+#' @examples
+#'
+#' #' @examples
+#'
+#' m = 50
+#' ni = rep(10, m)
+#' Ni = rep(200, m)
+#' N = sum(Ni)
+#' n = sum(ni)
+#'
+#' X <- generate_X(
+#'  n = N,
+#'  p = 1,
+#'  covariance_norm = NULL,
+#'  cov_type = "unif",
+#'  seed = 1
+#' )
+#'
+#' X_outcome <- generate_X(
+#'  n = N,
+#'  p = 1,
+#'  covariance_norm = NULL,
+#'  cov_type = "lognorm",
+#'  seed = 1
+#' )
+#'
+#' populations <- generate_pop(X, X_outcome,
+#' coeffs = get_default_coeffs(),
+#' errors_outcome = get_default_errors_outcome(),
+#' rand_eff_outcome = get_default_rand_eff_outcome(),
+#' rand_eff_p_score = get_default_rand_eff_p_score(),
+#' regression_type = "continuous",
+#' Ni_size  = 100,
+#' m = 50,
+#' no_sim = 1,
+#' seed = 10)
+#'
+#' samples <- generate_sample(populations, ni_size = 10,
+#'                            sample_part = "sampled",
+#'                            get_index = TRUE)
+#'
+#' data_sample <- data.frame(samples[[1]]$samp_data)
+#' index_sample <- samples[[1]]$index_s
+#' data_out_of_sample <- populations[-index_sample, ]
+#'
+#' model_formula_OR = y ~ X1 + Xo1 + (1|group)
 #'
 #'
 
@@ -58,7 +103,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                       xgboost_params = list(CV_XGB = TRUE,
                                                             nfolds = 5,
                                                             nrounds = 50)),
-                params_OR = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
+                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                  method = "EBLUP",
                                  tune_RF = FALSE,
                                  xgboost_params = list(CV_XGB = TRUE,
@@ -115,6 +160,39 @@ estimate_hte <- function(...)
 estimate_hte.OR <- function(obj_hte,
                             params_OR,
                             ...) {
+  # Full data --------------------------
+  data_sample  = obj_hte$data_sample
+  data_out_of_sample = obj_hte$data_out_of_sample
+
+  # Controls -------------------------------------
+  data_sample0 = data_sample[data_sample$A == 0, ]
+
+  OR0 <- impute_y(model_formula = params_OR$model_formula,
+                  data_sample = data_sample0,
+                  data_out_of_sample = data_out_of_sample,
+                  method = params_OR$method,
+                  type_model = params_OR$type_model,
+                  tune_RF = params_OR$tune_RF,
+                  xgboost_params = params_OR$xgboost_params)
+
+  y_hat0 <- c(OR0$y_hat_sample, OR0$y_hat_out_of_sample)
+
+  # Treated --------------------------------------
+  data_sample1 = data_sample[data_sample$A == 1, ]
+
+  OR1 <- impute_y(model_formula = params_OR$model_formula,
+                  data_sample = data_sample1,
+                  data_out_of_sample = data_out_of_sample,
+                  method = params_OR$method,
+                  type_model = params_OR$type_model,
+                  tune_RF = params_OR$tune_RF,
+                  xgboost_params = params_OR$xgboost_params)
+
+  y_hat1 <- c(OR1$y_hat_sample, OR1$y_hat_out_of_sample)
+
+  data_or <- data.frame()
+  aggregate(df$pts, list(df$team), FUN=mean)
+
 
 
 }
@@ -129,16 +207,6 @@ estimate_hte.IPW <- function(obj_hte,
                              params_OR,
                              ...) {
 
-  data_sample0  = obj_hte$data_sample
-  data_out_of_sample0 = obj_hte$data_out_of_sample
-
-  impute_y(model_formula = params_OR$model_formula,
-           data_sample,
-           data_out_of_sample,
-           method = params_OR$method,
-           type_model = params_OR$type_model,
-           tune_RF = params_OR$tune_RF,
-           xgboost_params = params_OR$xgboost_params)
 
 
 }
