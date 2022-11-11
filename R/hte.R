@@ -76,7 +76,7 @@
 #' rand_eff_outcome = get_default_rand_eff_outcome(),
 #' rand_eff_p_score = get_default_rand_eff_p_score(),
 #' regression_type = "continuous",
-#' Ni_size  = 100,
+#' Ni_size  = 200,
 #' m = 50,
 #' no_sim = 1,
 #' seed = 10)
@@ -161,8 +161,9 @@ estimate_hte.OR <- function(obj_hte,
                             params_OR,
                             ...) {
   # Full data --------------------------
-  data_sample  = obj_hte$data_sample
-  data_out_of_sample = obj_hte$data_out_of_sample
+  data_full <- rbind(obj_hte$data_sample, obj_hte$data_out_of_sample)
+#  data_sample  = obj_hte$data_sample
+#  data_out_of_sample = obj_hte$data_out_of_sample
 
   # Controls -------------------------------------
   data_sample0 = data_sample[data_sample$A == 0, ]
@@ -175,7 +176,9 @@ estimate_hte.OR <- function(obj_hte,
                   tune_RF = params_OR$tune_RF,
                   xgboost_params = params_OR$xgboost_params)
 
-  y_hat0 <- c(OR0$y_hat_sample, OR0$y_hat_out_of_sample)
+
+  mu0_y <- predict(object = OR0$outcome_fit, newdata = data_full,
+                   allow.new.levels = TRUE)
 
   # Treated --------------------------------------
   data_sample1 = data_sample[data_sample$A == 1, ]
@@ -188,14 +191,24 @@ estimate_hte.OR <- function(obj_hte,
                   tune_RF = params_OR$tune_RF,
                   xgboost_params = params_OR$xgboost_params)
 
-  y_hat1 <- c(OR1$y_hat_sample, OR1$y_hat_out_of_sample)
+  mu1_y <- predict(OR1$outcome_fit, newdata = data_full,
+                   allow.new.levels = TRUE)
 
-  data_or <- data.frame()
-  aggregate(df$pts, list(df$team), FUN=mean)
+  data_OR <- data.frame(mu1_y = mu1_y,
+                        mu0_y = mu0_y,
+                        group = c(data_sample$group, data_out_of_sample$group))
 
+  tau_1 = aggregate(data_OR$mu1_y, list(data_OR$group), FUN = mean)$x
+  tau_0 = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
+  tau = tau_1 - tau_0
 
+  output <- list(tau_1 = tau_1,
+                 tau_0 = tau_0,
+                 tau = tau,
+                 group = )
+  return(output)
 
-}
+  }
 
 #'
 #' @describeIn imputation_y Function to estimate imputation_y using EBLUP
