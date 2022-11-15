@@ -112,11 +112,11 @@ fct_treat_untreat <- function(subpopulation, type_tau) {
   res1_y = y - mu1_y
 
   tau_treat_ind  <- (y * A) / p_score
-  tau_treat_AIPW <- (y * res1_y) / p_score + mu1_y
+  tau_treat_AIPW <- (res1_y * A) / p_score + mu1_y
   weights_treat <- A / p_score
 
   tau_untreat_ind <- (y * (1 - A)) / (1 - p_score)
-  tau_untreat_AIPW <- (y * res0_y) / p_score + mu0_y
+  tau_untreat_AIPW <- (res0_y * (1 - A)) / (1 - p_score) + mu0_y
   weights_untreat <- (1 - A) / (1 - p_score)
 
   if (type_tau == "HT") {

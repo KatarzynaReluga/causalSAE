@@ -152,7 +152,7 @@ estimate_hte <- function(...)
 
 
 #'
-#' @describeIn imputation_y Function to estimate imputation_y using EBLUP
+#' @describeIn estimate_hte Estimate heterogeneous treatment effects using OR
 #' @export
 #'
 
@@ -160,58 +160,24 @@ estimate_hte <- function(...)
 estimate_hte.OR <- function(obj_hte,
                             params_OR,
                             ...) {
-  # Full data --------------------------
-  data_full <- rbind(obj_hte$data_sample, obj_hte$data_out_of_sample)
-#  data_sample  = obj_hte$data_sample
-#  data_out_of_sample = obj_hte$data_out_of_sample
-
-  # Controls -------------------------------------
-  data_sample0 = data_sample[data_sample$A == 0, ]
-
-  OR0 <- impute_y(model_formula = params_OR$model_formula,
-                  data_sample = data_sample0,
-                  data_out_of_sample = data_out_of_sample,
-                  method = params_OR$method,
-                  type_model = params_OR$type_model,
-                  tune_RF = params_OR$tune_RF,
-                  xgboost_params = params_OR$xgboost_params)
 
 
-  mu0_y <- predict(object = OR0$outcome_fit, newdata = data_full,
-                   allow.new.levels = TRUE)
+  data_OR <- fit_OR(obj_hte, params_OR)
 
-  # Treated --------------------------------------
-  data_sample1 = data_sample[data_sample$A == 1, ]
+  tau_treat = aggregate(data_OR$mu1_y, list(data_OR$group), FUN = mean)$x
+  tau_untreat = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
+  tau = tau_treat - tau_untreat
 
-  OR1 <- impute_y(model_formula = params_OR$model_formula,
-                  data_sample = data_sample1,
-                  data_out_of_sample = data_out_of_sample,
-                  method = params_OR$method,
-                  type_model = params_OR$type_model,
-                  tune_RF = params_OR$tune_RF,
-                  xgboost_params = params_OR$xgboost_params)
-
-  mu1_y <- predict(OR1$outcome_fit, newdata = data_full,
-                   allow.new.levels = TRUE)
-
-  data_OR <- data.frame(mu1_y = mu1_y,
-                        mu0_y = mu0_y,
-                        group = c(data_sample$group, data_out_of_sample$group))
-
-  tau_1 = aggregate(data_OR$mu1_y, list(data_OR$group), FUN = mean)$x
-  tau_0 = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
-  tau = tau_1 - tau_0
-
-  output <- list(tau_1 = tau_1,
-                 tau_0 = tau_0,
+  output <- list(tau_treat = tau_treat,
+                 tau_untreat = tau_untreat,
                  tau = tau,
-                 group = unique(data_OR$group))
+                 group_name = unique(data_OR$group))
   return(output)
 
   }
 
 #'
-#' @describeIn imputation_y Function to estimate imputation_y using EBLUP
+#' @describeIn estimate_hte Estimate heterogeneous treatment effects using IPW
 #' @export
 #'
 
@@ -221,42 +187,82 @@ estimate_hte.IPW <- function(obj_hte,
                              params_impute_y,
                              ...) {
 
+  # Obtain IPW data -------------------------------------------
 
-  # Obtain fitted propensity score -------------------------------
-  fitted_p_score <- fit_p_score(obj_hte = obj_hte,
-                                params_p_score = params_p_score)
+  IPW_data <- obtain_IPW_data(obj_hte,
+                              params_p_score,
+                              params_impute_y)
 
-
-  # Obtain imputation model -------------------------------
-  data_sample  = obj_hte$data_sample
-  data_out_of_sample = obj_hte$data_out_of_sample
-
-  imputed_y <- impute_y(model_formula = params_impute_y$model_formula,
-                  data_sample = data_sample,
-                  data_out_of_sample = data_out_of_sample,
-                  method = params_impute_y$method,
-                  type_model = params_impute_y$type_model,
-                  tune_RF = params_impute_y$tune_RF,
-                  xgboost_params = params_impute_y$xgboost_params)
-
-  y_full_impute <- imputed_y$y_full_imputed
-
-  data_to_estimate <- data.frame(y = y_full_impute,
-                                 A = c(data_sample$A, data_out_of_sample$A),
-                                 group = c(data_sample$group, data_out_of_sample$group),
-                                 p_score  = fitted_p_score)
-
-  tau_HT <- calculate_tau(populations, type_tau = "HT")
-
-  tau_H <- calculate_tau(populations, type_tau = "H")
+  tau <- calculate_tau(IPW_data, type_tau = "HT")
+  return(tau)
 
 }
+
+#'
+#' @describeIn estimate_hte Estimate heterogeneous treatment effects using NIPW
+#' @export
+#'
+
+
+estimate_hte.NIPW <- function(obj_hte,
+                             params_p_score,
+                             params_impute_y,
+                             ...) {
+
+
+  # Obtain IPW data  -------------------------------
+  IPW_data <- obtain_IPW_data(obj_hte,
+                              params_p_score,
+                              params_impute_y)
+
+  tau <- calculate_tau(IPW_data, type_tau = "H")
+  return(tau)
+
+}
+
+
+#'
+#' @describeIn estimate_hte Estimate heterogeneous treatment effects using AIPW
+#' @export
+#'
+
+
+estimate_hte.AIPW <- function(obj_hte,
+                              params_p_score,
+                              params_impute_y,
+                              params_OR,
+                              ...) {
+
+
+  if (params_OR$method == params_impute_y$method) {
+    stop("In AIPW, the method to impute outcomes cannot be the same as the method for fitting outcome regression model. Choose another estimation method.")
+  }
+
+  # Obtain IPW data ----------------------------------------------
+  IPW_data <- obtain_IPW_data(obj_hte,
+                              params_p_score,
+                              params_impute_y)
+  # Obtain outcome regression data -----------------------------------------
+  data_OR <- fit_OR(obj_hte, params_OR)
+
+  AIPW_data <- IPW_data
+  AIPW_data$mu0_y <- data_OR$mu0_y
+  AIPW_data$mu1_y <- data_OR$mu1_y
+
+
+  tau <- calculate_tau(AIPW_data, type_tau = "AIPW")
+  return(tau)
+
+}
+
+
 
 #' Fit propensity score
 #'
 #' Internal function to obtain subpopulation heterogenous treatment effects
 #'
 #' @inheritParams hte
+#' @param obj_hte Object to estimate hte
 #'
 #' @importFrom dplyr select
 #'
@@ -274,11 +280,16 @@ fit_p_score <- function(obj_hte, params_p_score) {
 
   if ("y" %in% names_out_of_sample) {
     #    y <- data_out_of_sample$y
+    y <- data_out_of_sample$y
     data_out_of_sample_p_score <- select(data_out_of_sample, -y)
+
+    y <- data_sample$y
     data_sample_p_score <- select(data_sample, -y)
+
     data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
     obj_p_score <- list(data_p_score = data_p_score)
   } else {
+    y <- data_sample$y
     data_sample_p_score <- select(data_sample, -y)
     data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
     obj_p_score <- list(data_p_score = data_p_score)
@@ -293,234 +304,44 @@ fit_p_score <- function(obj_hte, params_p_score) {
   return(ps_hat)
 }
 
-
-
-hte <- function(formula_y,
-                formula_p_score,
-                type_tau,
-                data_sample,
-                data_out_of_sample,
-                method_y = c("EBLUP", "MQ", "RF"),
-                method_p_score =  c("EBLUP", "MQ", "RF"),
-                p_score_estimate = NULL,
-                tune_RF = F, ...){
-
-  method_y <- match.arg(method_y)
-  method_p_score <- match.arg(method_p_score)
-
-  y_hat <- outcome_regression(formula_y,
-                              data_sample,
-                              data_out_of_sample,
-                              method_y,
-                              family = "gaussian",
-                              method = "continuous",
-                              tune_RF)
-
-  if (is.null(p_score_estimate)) {
-
-    data_sample_p_score <- select(data_sample, -y)
-
-    if (sum(names(data_out_of_sample) == "y") == 1) {
-      data_out_of_sample_p_score <- select(data_out_of_sample, -y)
-    } else {
-      data_out_of_sample_p_score <- data_out_of_sample
-    }
-
-    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-    ps_hat <-  p_score(formula_p_score,
-                       data_sample = data_p_score,
-                       method_p_score = method_p_score)
-  }
-
-
-  y_full <- c(data_sample$y, unlist(y_hat))
-  group_full <- c(data_sample$group, data_out_of_sample$group)
-  A_full <- c(data_sample$A, data_out_of_sample$A)
-
-  pop_est <- data.frame(y = y_full, A = A_full,
-                        group = group_full, p_score = ps_hat)
-
-
-  #  pop_full_a <- arrange(pop_est, group)
-  pop_full <- list(pop_est)
-
-  #  tau_hat <- calculate_tau(list(pop_full_a))
-  tau_hat <- calculate_tau(list(pop_full), type_tau)
-
-  output <- list(tau_hat = tau_hat,
-                 pop_full = pop_full)
-  output
-}
-
-
-#' Outcome regression
+#' Obtain IPW data
 #'
-#' Fit outcome regression model
-#'
+#' Internal function to obtain data to fit IPW and NIPW estimators
 #'
 #' @inheritParams hte
-#' @param family Specification for the model link function in glmer()
-#' @param method Specification for the model link function in mquantreg()
+#' @param obj_hte Object to estimate hte
 #'
-#' @importFrom lme4 lmer glmer
-#' @importFrom stats terms
-#' @importFrom grf regression_forest
-#' @importFrom mquantreg mquantreg
+#' @importFrom dplyr select
 #'
-#' @export
+#' @return Estimates of propensity score.
 #'
 
+obtain_IPW_data <- function(obj_hte,
+                         params_p_score,
+                         params_impute_y) {
+  # Obtain fitted propensity score -------------------------------
+  fitted_p_score <- fit_p_score(obj_hte = obj_hte,
+                                params_p_score = params_p_score)
 
 
-outcome_regression <- function(formula_y,
-                               data_sample,
-                               data_out_of_sample,
-                               method_y,
-                               family = "gaussian",
-                               method = "continuous",
-                               tune_RF) {
+  # Obtain imputation model -------------------------------
+  data_sample  = obj_hte$data_sample
+  data_out_of_sample = obj_hte$data_out_of_sample
 
+  imputed_y <- impute_y(model_formula = params_impute_y$model_formula,
+                        data_sample = data_sample,
+                        data_out_of_sample = data_out_of_sample,
+                        method = params_impute_y$method,
+                        type_model = params_impute_y$type_model,
+                        tune_RF = params_impute_y$tune_RF,
+                        xgboost_params = params_impute_y$xgboost_params)
 
-  if (method_y ==  "EBLUP") {
-    if (family == "gaussian") {
+  y_full_impute <- imputed_y$y_full_imputed
 
-      outcome_fit <- lmer(formula_y, data = data_sample)
-      y_hat <- predict(outcome_fit, newdata = data_out_of_sample, allow.new.levels = TRUE)
+  IPW_data <- data.frame(y = y_full_impute,
+                                 A = c(data_sample$A, data_out_of_sample$A),
+                                 group = c(data_sample$group, data_out_of_sample$group),
+                                 p_score  = fitted_p_score)
+  return(IPW_data)
 
-    } else {
-      outcome_fit <- glmer(formula_y, data = data_sample, family = family)
-      y_hat <- as.vector(predict(outcome_fit, newdata = data_out_of_sample , allow.new.levels = TRUE))
-    }
-  } else {
-
-    # Get the (predictor) variables
-    vars <- attr(terms(formula_y), which = "term.labels")
-
-    # Get the response
-    response <- as.character(attr(terms(formula_y), which = "variables")[[2]]) # The response variable name
-
-    # Get the predictors without group variable
-    predictor <- paste(vars[-length(vars)], collapse = " + ")
-
-    if (method_y ==  "MQ") {
-      # Build a formula
-      formula_yMQ <- paste(response, " ~ ", predictor)
-      outcome_fit = mquantreg(formula = formula_yMQ, data = data_sample, q  = 0.5, method = method)
-      y_hat <- as.vector(predict(outcome_fit, newdata = data_out_of_sample,
-                                 regression_type = "continuous"))
-
-    }  else {
-
-      X = data_sample[, vars[ - length(vars)],  drop = F]
-      X_newdata = data_out_of_sample[, vars[ - length(vars)],  drop = F]
-      Y = data_sample[, response]
-      clusters  = as.numeric(data_sample$group)
-
-      if (tune_RF) {
-        outcome_fit <- regression_forest(X, Y,
-                                         clusters = clusters, tune.parameters = "all")
-      } else {
-        outcome_fit <- regression_forest(X, Y, clusters = clusters)
-      }
-
-      y_hat <- predict(outcome_fit, newdata = X_newdata)
-
-    }
-  }
-  y_hat
-
-}
-
-#'
-#' Propensity score
-#'
-#' Fit propensity score model
-#'
-#'
-#' @inheritParams hte
-#'
-#' @importFrom lme4 lmer glmer
-#' @importFrom stats terms binomial
-#' @importFrom grf regression_forest
-#' @importFrom mquantreg mquantreg
-#'
-#' @export
-#'
-
-
-p_score <- function(formula_p_score,
-                    data_sample,
-                    data_out_of_sample = NULL,
-                    method_p_score) {
-
-
-  if (method_p_score == "EBLUP") {
-
-    ps_fit <- glmer(formula_p_score, data = data_sample, family = binomial(link = "logit"))
-    ps_hat_sample <- as.vector(predict(ps_fit, newdata = data_sample,
-                                       type = "response", allow.new.levels = TRUE))
-    #      ps_hat_out <- as.vector(predict(ps_fit, newdata = data_out_of_sample,
-    #                                  type = "response", allow.new.levels = TRUE))
-    #      ps_hat <- c(ps_hat_sample, ps_hat_out)
-
-    if (is.null(data_out_of_sample)) {
-      ps_hat <- c(ps_hat_sample)
-    } else {
-      ps_hat_out <- as.vector(predict(ps_fit, newdata = data_out_of_sample,
-                                      type = "response", allow.new.levels = TRUE))
-      ps_hat <- c(ps_hat_sample, ps_hat_out)
-    }
-
-  } else {
-
-    # Get the (predictor) variables
-    vars <- attr(terms(formula_p_score), which = "term.labels")
-
-    # Get the response
-    response <- as.character(attr(terms(formula_p_score), which = "variables")[[2]]) # The response variable name
-
-    # Get the predictors without group variable
-    predictor <- paste(vars[-length(vars)], collapse = " + ")
-
-    if (method_p_score ==  "MQ") {
-      # Build a formula
-      formula_p_scoreMQ <- paste(response, " ~ ", predictor)
-      ps_fit <- mquantreg(formula = formula_p_scoreMQ, data = data_sample,
-                          q  = 0.5, method = "binom")
-      ps_hat_sample <- unlist(predict(ps_fit, newdata = data_sample,
-                                      regression_type = "binary"))
-      #      ps_hat_out <- unlist(predict(ps_fit, newdata = data_out_of_sample,
-      #                       regression_type = "binary"))
-      #      ps_hat <- c(ps_hat_sample, ps_hat_out)
-
-      if (is.null(data_out_of_sample)) {
-        ps_hat <- c(ps_hat_sample)
-      } else {
-        ps_hat_out <- unlist(predict(ps_fit, newdata = data_out_of_sample,
-                                     regression_type = "binary"))
-        ps_hat <- c(ps_hat_sample, ps_hat_out)
-      }
-
-    }  else {
-
-      X = data_sample[, vars[ - length(vars)], drop = F]
-      Y = data_sample[, response]
-      clusters  = as.numeric(data_sample$group)
-      ps_fit <- regression_forest(X, Y, clusters = clusters)
-
-      ps_hat_sample <- unlist(predict(ps_fit, newdata = X), use.names = FALSE)
-      #      ps_hat_out <- predict(ps_fit, newdata = X_newdata)
-      #      ps_hat <- c(ps_hat_sample, ps_hat_out)
-
-      if (is.null(data_out_of_sample)) {
-        ps_hat <- c(ps_hat_sample)
-      } else {
-        X_newdata = data_out_of_sample[, vars[ - length(vars)], drop = F]
-        ps_hat_out <- unlist(predict(ps_fit, newdata = X_newdata), use.names = FALSE)
-        ps_hat <- c(ps_hat_sample, ps_hat_out)
-      }
-
-    }
-  }
-  ps_hat
 }

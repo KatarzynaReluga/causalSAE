@@ -2,14 +2,61 @@
 % Please edit documentation in R/hte.R
 \name{estimate_hte}
 \alias{estimate_hte}
+\alias{estimate_hte.OR}
+\alias{estimate_hte.IPW}
+\alias{estimate_hte.NIPW}
+\alias{estimate_hte.AIPW}
 \title{Estimate hte}
 \usage{
 estimate_hte(...)
+
+\method{estimate_hte}{OR}(obj_hte, params_OR, ...)
+
+\method{estimate_hte}{IPW}(obj_hte, params_p_score, params_impute_y, ...)
+
+\method{estimate_hte}{NIPW}(obj_hte, params_p_score, params_impute_y, ...)
+
+\method{estimate_hte}{AIPW}(obj_hte, params_p_score, params_impute_y, params_OR, ...)
 }
 \arguments{
 \item{...}{Additional parameters}
 
 \item{obj_hte}{Object to estimate hte}
+
+\item{params_OR}{List with parameters to fit outcome regression model:
+\itemize{
+\item model_formula - model formula,
+\item method - estimation method, choose between: \code{EBLUP},
+\code{MQ}, \code{RF}, \code{XGB},
+\item tune_RF - tune random forest parameters,
+\item xgboost_params - list of parameters to obtain predictions
+using gradient boosting, default: \code{CV_XGB = TRUE},
+\code{nfolds = 5}, \code{nrounds = 50}.
+\item type_model - type of outcome.
+}}
+
+\item{params_p_score}{List with parameters to fit propensity score:
+\itemize{
+\item model_formula - model formula,
+\item method - estimation method, choose between: \code{EBLUP},
+\code{MQ}, \code{RF}, \code{XGB},
+\item tune_RF - tune random forest parameters,
+\item xgboost_params - list of parameters to obtain predictions
+using gradient boosting, default: \code{CV_XGB = TRUE},
+\code{nfolds = 5}, \code{nrounds = 50}.
+}}
+
+\item{params_impute_y}{List with parameters to fit imputation model:
+\itemize{
+\item model_formula - model formula,
+\item method - estimation method, choose between: \code{EBLUP},
+\code{MQ}, \code{RF}, \code{XGB},
+\item tune_RF - tune random forest parameters,
+\item xgboost_params - list of parameters to obtain predictions
+using gradient boosting, default: \code{CV_XGB = TRUE},
+\code{nfolds = 5}, \code{nrounds = 50}.
+\item type_model - type of outcome.
+}}
 }
 \value{
 List with following parameters:
@@ -20,3 +67,14 @@ List with following parameters:
 \description{
 Internal generic function to estimate hte
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{OR}: Estimate heterogeneous treatment effects using OR
+
+\item \code{IPW}: Estimate heterogeneous treatment effects using IPW
+
+\item \code{NIPW}: Estimate heterogeneous treatment effects using NIPW
+
+\item \code{AIPW}: Estimate heterogeneous treatment effects using AIPW
+}}
+

@@ -5,31 +5,30 @@
 \title{Heterogenous treatment effect}
 \usage{
 hte(
-  formula_y,
-  formula_p_score,
-  type_tau,
+  type_hte = c("OR", "IPW", "NIPW", "AIPW"),
   data_sample,
   data_out_of_sample,
-  method_y = c("EBLUP", "MQ", "RF"),
-  method_p_score = c("EBLUP", "MQ", "RF"),
   p_score_estimate = NULL,
-  tune_RF = F,
+  params_p_score = list(model_formula = A ~ X1 + (1 | group), method = "EBLUP", tune_RF
+    = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50)),
+  params_OR = list(model_formula = y ~ X1 + Xo1 + (1 | group), method = "EBLUP",
+    tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50),
+    type_model = "gaussian"),
+  params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A || group), method =
+    "EBLUP", tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
+    50), type_model = "gaussian"),
   ...
 )
 }
 \arguments{
+\item{type_hte}{Type of estimation method, choose between: \code{OR}, \code{IPW},
+\code{NIPW}, \code{AIPW}.}
+
 \item{data_sample}{Data from the sample.}
 
 \item{data_out_of_sample}{Data from the remaining part of population.}
 
 \item{p_score_estimate}{Vector of estimated propensity scores. Default: \code{p_score_estimate = NULL}.}
-
-\item{tune_RF}{Tune parameters in random forest? Default = FALSE.}
-
-\item{...}{Additional parameters}
-
-\item{type_hte}{Type of estimation method, choose between: \code{OR}, \code{IPW},
-\code{NIPW}, \code{AIPW}.}
 
 \item{params_p_score}{List with parameters to fit propensity score:
 \itemize{
@@ -40,6 +39,18 @@ hte(
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
+}}
+
+\item{params_OR}{List with parameters to fit outcome regression model:
+\itemize{
+\item model_formula - model formula,
+\item method - estimation method, choose between: \code{EBLUP},
+\code{MQ}, \code{RF}, \code{XGB},
+\item tune_RF - tune random forest parameters,
+\item xgboost_params - list of parameters to obtain predictions
+using gradient boosting, default: \code{CV_XGB = TRUE},
+\code{nfolds = 5}, \code{nrounds = 50}.
+\item type_model - type of outcome.
 }}
 
 \item{params_impute_y}{List with parameters to fit imputation model:
@@ -54,17 +65,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item type_model - type of outcome.
 }}
 
-\item{params_OR}{List with parameters to fit outcome regression model:
-\itemize{
-\item model_formula - model formula,
-\item method - estimation method, choose between: \code{EBLUP},
-\code{MQ}, \code{RF}, \code{XGB},
-\item tune_RF - tune random forest parameters,
-\item xgboost_params - list of parameters to obtain predictions
-using gradient boosting, default: \code{CV_XGB = TRUE},
-\code{nfolds = 5}, \code{nrounds = 50}.
-\item type_model - type of outcome.
-}}
+\item{...}{Additional parameters}
 }
 \description{
 Calculates heterogrenous treatment effects for subpopulations
