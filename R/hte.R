@@ -144,7 +144,6 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
 #' @importFrom grf regression_forest
 #' @importFrom xgboost xgboost xgb.cv
 #' @importFrom mquantreg mquantreg
-#' @importFrom dplyr select %in%
 #'
 
 
@@ -222,37 +221,68 @@ estimate_hte.IPW <- function(obj_hte,
                              params_impute_y,
                              ...) {
 
-  fit_p_score <- function(obj_hte, params_p_score) {
 
-    data_out_of_sample <- obj_hte$data_out_of_sample
-    names_out_of_sample <- names(data_out_of_sample)
-
-    data_sample <- obj_hte$data_sample
+  # Obtain fitted propensity score -------------------------------
+  fitted_p_score <- fit_p_score(obj_hte = obj_hte,
+                                params_p_score = params_p_score)
 
 
-    if ("y" %in% names_out_of_sample) {
-      #    y <- data_out_of_sample$y
-      data_out_of_sample_p_score <- select(data_out_of_sample, -y)
-      data_sample_p_score <- select(data_sample, -y)
-      data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-      obj_p_score <- list(data_p_score = data_p_score)
-    } else {
-      data_sample_p_score <- select(data_sample, -y)
-      data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-      obj_p_score <- list(data_p_score = data_p_score)
-    }
+  # Obtain imputation model -------------------------------
+  data_sample  = obj_hte$data_sample
+  data_out_of_sample = obj_hte$data_out_of_sample
 
-    class(obj_p_score) <- params_p_score$method
-
-    ps_hat <- p_score(obj_p_score = obj_p_score,
-                      model_formula = params_p_score$model_formula,
-                      xgboost_params = params_p_score$xgboost_params,
-                      tune_RF = params_p_score$tune_RF)
-  }
-
-
+  imputed_y <- impute_y(model_formula = params_impute_y$model_formula,
+                  data_sample = data_sample,
+                  data_out_of_sample = data_out_of_sample,
+                  method = params_impute_y$method,
+                  type_model = params_impute_y$type_model,
+                  tune_RF = params_impute_y$tune_RF,
+                  xgboost_params = params_impute_y$xgboost_params)
 
 }
+
+#' Fit propensity score
+#'
+#' Internal function to obtain subpopulation heterogenous treatment effects
+#'
+#' @inheritParams hte
+#'
+#' @importFrom dplyr select
+#'
+#' @return Estimates of propensity score.
+#'
+
+
+fit_p_score <- function(obj_hte, params_p_score) {
+
+  data_out_of_sample <- obj_hte$data_out_of_sample
+  names_out_of_sample <- names(data_out_of_sample)
+
+  data_sample <- obj_hte$data_sample
+
+
+  if ("y" %in% names_out_of_sample) {
+    #    y <- data_out_of_sample$y
+    data_out_of_sample_p_score <- select(data_out_of_sample, -y)
+    data_sample_p_score <- select(data_sample, -y)
+    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
+    obj_p_score <- list(data_p_score = data_p_score)
+  } else {
+    data_sample_p_score <- select(data_sample, -y)
+    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
+    obj_p_score <- list(data_p_score = data_p_score)
+  }
+
+  class(obj_p_score) <- params_p_score$method
+
+  ps_hat <- p_score(obj_p_score = obj_p_score,
+                    model_formula = params_p_score$model_formula,
+                    xgboost_params = params_p_score$xgboost_params,
+                    tune_RF = params_p_score$tune_RF)
+  return(ps_hat)
+}
+
+
 
 hte <- function(formula_y,
                 formula_p_score,

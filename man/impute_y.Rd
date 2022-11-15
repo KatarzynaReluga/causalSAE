@@ -16,13 +16,13 @@ impute_y(
 )
 }
 \arguments{
-\item{model_formula}{Specification for the model link function in glmer().}
+\item{model_formula}{Model formula.}
 
 \item{data_sample}{Data from the sample.}
 
 \item{data_out_of_sample}{Data from the remaining part of population.}
 
-\item{method}{Specification for the model link function in mquantreg().}
+\item{method}{Estimation method, choose between: \code{EBLUP}, \code{MQ}, \code{RF}, \code{XGB}.}
 
 \item{type_model}{Type of outcome.}
 
