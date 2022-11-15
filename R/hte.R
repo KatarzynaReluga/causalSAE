@@ -205,7 +205,7 @@ estimate_hte.OR <- function(obj_hte,
   output <- list(tau_1 = tau_1,
                  tau_0 = tau_0,
                  tau = tau,
-                 group = )
+                 group = unique(data_OR$group))
   return(output)
 
   }
@@ -238,6 +238,17 @@ estimate_hte.IPW <- function(obj_hte,
                   type_model = params_impute_y$type_model,
                   tune_RF = params_impute_y$tune_RF,
                   xgboost_params = params_impute_y$xgboost_params)
+
+  y_full_impute <- imputed_y$y_full_imputed
+
+  data_to_estimate <- data.frame(y = y_full_impute,
+                                 A = c(data_sample$A, data_out_of_sample$A),
+                                 group = c(data_sample$group, data_out_of_sample$group),
+                                 p_score  = fitted_p_score)
+
+  tau_HT <- calculate_tau(populations, type_tau = "HT")
+
+  tau_H <- calculate_tau(populations, type_tau = "H")
 
 }
 
