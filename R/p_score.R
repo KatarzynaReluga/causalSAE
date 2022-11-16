@@ -143,13 +143,13 @@ p_score.MQ <- function(obj_p_score,
   predictor <- paste(vars[-length(vars)], collapse = " + ")
 
   # Build a formula
-  model_formulaMQ <- paste(response, " ~ ", predictor)
 
   ps_fit <- mquantreg(formula = model_formulaMQ,
                       data = data_p_score,
                       q  = 0.5, method = "binom")
 
-  ps_hat <- unname(unlist(predict(ps_fit, newdata = data_p_score)))
+  ps_hat <- unname(unlist(predict(ps_fit, newdata = data_p_score,
+                                  regression_type = "binary")))
 
   return(ps_hat)
 

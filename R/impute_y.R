@@ -232,11 +232,13 @@ imputation_y.MQ <- function(obj_imputation_y,
                           q  = 0.5,
                           method = type_model)
 
-  y_hat_out_of_sample <- as.vector(predict(outcome_fit,
-                             newdata = data_out_of_sample))
+  y_hat_out_of_sample <- unname(unlist(predict(outcome_fit,
+                             newdata = data_out_of_sample,
+                             regression_type = type_model)))
 
-  y_hat_sample <- as.vector(predict(outcome_fit,
-                            newdata = data_sample))
+  y_hat_sample <- unname(unlist(predict(outcome_fit,
+                            newdata = data_sample,
+                            regression_type = type_model)))
 
   output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
                  y_hat_sample = y_hat_sample,

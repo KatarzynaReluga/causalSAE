@@ -5,7 +5,6 @@
 #' @inheritParams impute_y
 #' @param type_hte Type of estimation method, choose between: \code{OR}, \code{IPW},
 #' \code{NIPW}, \code{AIPW}.
-#' @param p_score_estimate Vector of estimated propensity scores. Default: \code{p_score_estimate = NULL}.
 #' @param params_p_score List with parameters to fit propensity score:
 #'  \itemize{
 #'  \item model_formula - model formula,
@@ -45,9 +44,9 @@
 #' @importFrom grf regression_forest
 #' @importFrom dplyr arrange select
 #'
-#' @examples
+#' @export
 #'
-#' #' @examples
+#' @examples
 #'
 #' m = 50
 #' ni = rep(10, m)
@@ -93,11 +92,66 @@
 #' model_formula_OR = y ~ X1 + Xo1 + (1|group)
 #'
 #'
-
+#' hte_OR <- hte(type_hte = "OR",
+#'               data_sample,
+#'               data_out_of_sample,
+#'               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+#'                                method = "EBLUP",
+#'                                tune_RF = FALSE,
+#'                                xgboost_params = list(CV_XGB = TRUE,
+#'                                                      nfolds = 5,
+#'                                                      nrounds = 50),
+#'                                                      type_model = "gaussian"),
+#'                                      boot_var = FALSE)
+#'
+#' hte_IPW <- hte(type_hte = "NIPW",
+#'               data_sample,
+#'               data_out_of_sample,
+#'               params_p_score = list(model_formula = A ~ X1 + (1|group),
+#'                           method = "RF",
+#'                           tune_RF = FALSE,
+#'                           xgboost_params = list(CV_XGB = TRUE,
+#'                                                 nfolds = 5,
+#'                                                 nrounds = 50)),
+#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
+#'                                      method = "EBLUP",
+#'                                      tune_RF = FALSE,
+#'                                      xgboost_params = list(CV_XGB = TRUE,
+#'                                                            nfolds = 5,
+#'                                                            nrounds = 50),
+#'                                      type_model = "gaussian"),
+#'                                      boot_var = FALSE)
+#'
+#'
+#' hte_AIPW <- hte(type_hte = "NIPW",
+#'               data_sample,
+#'               data_out_of_sample,
+#'               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+#'                                method = "EBLUP",
+#'                                tune_RF = FALSE,
+#'                                xgboost_params = list(CV_XGB = TRUE,
+#'                                                      nfolds = 5,
+#'                                                      nrounds = 50),
+#'                                                      type_model = "gaussian"),
+#'               params_p_score = list(model_formula = A ~ X1 + (1|group),
+#'                           method = "EBLUP",
+#'                           tune_RF = FALSE,
+#'                           xgboost_params = list(CV_XGB = TRUE,
+#'                                                 nfolds = 5,
+#'                                                 nrounds = 50)),
+#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
+#'                                      method = "RF",
+#'                                      tune_RF = FALSE,
+#'                                      xgboost_params = list(CV_XGB = TRUE,
+#'                                                            nfolds = 5,
+#'                                                            nrounds = 50),
+#'                                      type_model = "gaussian"),
+#'               boot_var = FALSE)
+#'
+#'
 hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                 data_sample,
                 data_out_of_sample,
-                p_score_estimate = NULL,
                 params_p_score = list(model_formula = A ~ X1 + (1|group),
                                       method = "EBLUP",
                                       tune_RF = FALSE,
@@ -136,6 +190,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
 
   }
 
+  return(estimate_hte)
 }
 
 
@@ -179,7 +234,7 @@ estimate_hte.OR <- function(obj_hte,
   tau_untreat = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
   tau = tau_treat - tau_untreat
 
-  output <- list(tau_treat = tau_treat,
+  output <- data.frame(tau_treat = tau_treat,
                  tau_untreat = tau_untreat,
                  tau = tau,
                  group_name = unique(data_OR$group))
@@ -199,14 +254,13 @@ estimate_hte.IPW <- function(obj_hte,
                              ...) {
 
   # Obtain IPW data -------------------------------------------
-
+a = Sys.time()
   IPW_data <- obtain_IPW_data(obj_hte,
                               params_p_score,
                               params_impute_y)
-
-  tau <- calculate_tau(IPW_data, type_tau = "HT")
-  return(tau)
-
+b = Sys.time()
+  tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "HT"))
+  return(tau_data)
 }
 
 #'
@@ -226,9 +280,8 @@ estimate_hte.NIPW <- function(obj_hte,
                               params_p_score,
                               params_impute_y)
 
-  tau <- calculate_tau(IPW_data, type_tau = "H")
-  return(tau)
-
+  tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "H"))
+  return(tau_data)
 }
 
 
@@ -261,8 +314,8 @@ estimate_hte.AIPW <- function(obj_hte,
   AIPW_data$mu1_y <- data_OR$mu1_y
 
 
-  tau <- calculate_tau(AIPW_data, type_tau = "AIPW")
-  return(tau)
+  tau_data <- as.data.frame(calculate_tau(AIPW_data, type_tau = "AIPW"))
+  return(tau_data)
 
 }
 
@@ -283,35 +336,45 @@ estimate_hte.AIPW <- function(obj_hte,
 
 fit_p_score <- function(obj_hte, params_p_score) {
 
+  a = Sys.time()
   data_out_of_sample <- obj_hte$data_out_of_sample
   names_out_of_sample <- names(data_out_of_sample)
 
   data_sample <- obj_hte$data_sample
+  names_data_sample <- names(data_sample)
 
-
-  if ("y" %in% names_out_of_sample) {
-    #    y <- data_out_of_sample$y
-    y <- data_out_of_sample$y
-    data_out_of_sample_p_score <- select(data_out_of_sample, -y)
-
-    y <- data_sample$y
-    data_sample_p_score <- select(data_sample, -y)
-
+  if (length(names_out_of_sample) == length(names_data_sample)) {
     data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-    obj_p_score <- list(data_p_score = data_p_score)
   } else {
     y <- data_sample$y
     data_sample_p_score <- select(data_sample, -y)
     data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-    obj_p_score <- list(data_p_score = data_p_score)
   }
 
+#  if ("y" %in% names_out_of_sample) {
+#    #    y <- data_out_of_sample$y
+#    y <- data_out_of_sample$y
+#    data_out_of_sample_p_score <- select(data_out_of_sample, -y)
+
+#    y <- data_sample$y
+#    data_sample_p_score <- select(data_sample, -y)
+
+#    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
+#    obj_p_score <- list(data_p_score = data_p_score)
+#  } else {
+#    y <- data_sample$y
+#    data_sample_p_score <- select(data_sample, -y)
+#    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
+#    obj_p_score <- list(data_p_score = data_p_score)
+#  }
+  b = Sys.time()
   class(obj_p_score) <- params_p_score$method
 
   ps_hat <- p_score(obj_p_score = obj_p_score,
                     model_formula = params_p_score$model_formula,
                     xgboost_params = params_p_score$xgboost_params,
                     tune_RF = params_p_score$tune_RF)
+
   return(ps_hat)
 }
 
@@ -331,10 +394,12 @@ obtain_IPW_data <- function(obj_hte,
                          params_p_score,
                          params_impute_y) {
   # Obtain fitted propensity score -------------------------------
+  a = Sys.time()
   fitted_p_score <- fit_p_score(obj_hte = obj_hte,
                                 params_p_score = params_p_score)
 
-
+  b = Sys.time()
+  b -a
   # Obtain imputation model -------------------------------
   data_sample  = obj_hte$data_sample
   data_out_of_sample = obj_hte$data_out_of_sample

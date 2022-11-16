@@ -107,28 +107,28 @@ data_out_of_sample <- populations[-index_sample, ]
 
 
 ht_OR <- hte(type_hte = "OR",
-                      data_sample,
-                      data_out_of_sample,
-                      params_p_estimate = NULL,
-                      params_OR = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
-                                       method = "EBLUP",
-                                       tune_RF = FALSE,
-                                       xgboost_params = list(CV_XGB = TRUE,
-                                                             nfolds = 5,
-                                                            nrounds = 50),
-                                       type_model = "gaussian"))
+             data_sample,
+             data_out_of_sample,
+             params_p_estimate = NULL,
+             params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+                              method = "EBLUP",
+                              tune_RF = FALSE,
+                              xgboost_params = list(CV_XGB = TRUE,
+                                                    nfolds = 5,
+                                                    nrounds = 50),
+                               type_model = "gaussian"))
 
 estimated_tau <- ht_OR$tau
 
-boot_var <- bootstrap_variance(formula_y,
-                               formula_p_score,
-                               estimated_tau,
-                               type_tau = "Hajek",
-                               data_sample,
-                               data_out_of_sample,
-                               method_y = "EBLUP",
-                               method_p_score = "EBLUP",
-                               n_boot = 100,
+obj_hte <- list(data_sample = data_sample,
+               data_out_of_sample = data_out_of_sample)
+class(obj_hte) <- type_hte
+
+
+boot_var <- bootstrap_variance(obj_hte = obj_hte,
+                               params_OR = params_OR,
+                               n_boot = 500,
+                               estimated_tau = estimated_tau,
                                seed = 1)
 
 

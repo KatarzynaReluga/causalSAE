@@ -8,7 +8,6 @@ hte(
   type_hte = c("OR", "IPW", "NIPW", "AIPW"),
   data_sample,
   data_out_of_sample,
-  p_score_estimate = NULL,
   params_p_score = list(model_formula = A ~ X1 + (1 | group), method = "EBLUP", tune_RF
     = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50)),
   params_OR = list(model_formula = y ~ X1 + Xo1 + (1 | group), method = "EBLUP",
@@ -28,8 +27,6 @@ hte(
 \item{data_sample}{Data from the sample.}
 
 \item{data_out_of_sample}{Data from the remaining part of population.}
-
-\item{p_score_estimate}{Vector of estimated propensity scores. Default: \code{p_score_estimate = NULL}.}
 
 \item{params_p_score}{List with parameters to fit propensity score:
 \itemize{
@@ -75,8 +72,6 @@ Calculates heterogrenous treatment effects for subpopulations
 }
 \examples{
 
-#' @examples
-
 m = 50
 ni = rep(10, m)
 Ni = rep(200, m)
@@ -119,6 +114,63 @@ index_sample <- samples[[1]]$index_s
 data_out_of_sample <- populations[-index_sample, ]
 
 model_formula_OR = y ~ X1 + Xo1 + (1|group)
+
+
+hte_OR <- hte(type_hte = "OR",
+              data_sample,
+              data_out_of_sample,
+              params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+                               method = "EBLUP",
+                               tune_RF = FALSE,
+                               xgboost_params = list(CV_XGB = TRUE,
+                                                     nfolds = 5,
+                                                     nrounds = 50),
+                                                     type_model = "gaussian"),
+                                     boot_var = FALSE)
+
+hte_IPW <- hte(type_hte = "NIPW",
+              data_sample,
+              data_out_of_sample,
+              params_p_score = list(model_formula = A ~ X1 + (1|group),
+                          method = "RF",
+                          tune_RF = FALSE,
+                          xgboost_params = list(CV_XGB = TRUE,
+                                                nfolds = 5,
+                                                nrounds = 50)),
+              params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
+                                     method = "EBLUP",
+                                     tune_RF = FALSE,
+                                     xgboost_params = list(CV_XGB = TRUE,
+                                                           nfolds = 5,
+                                                           nrounds = 50),
+                                     type_model = "gaussian"),
+                                     boot_var = FALSE)
+
+
+hte_AIPW <- hte(type_hte = "NIPW",
+              data_sample,
+              data_out_of_sample,
+              params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+                               method = "EBLUP",
+                               tune_RF = FALSE,
+                               xgboost_params = list(CV_XGB = TRUE,
+                                                     nfolds = 5,
+                                                     nrounds = 50),
+                                                     type_model = "gaussian"),
+              params_p_score = list(model_formula = A ~ X1 + (1|group),
+                          method = "EBLUP",
+                          tune_RF = FALSE,
+                          xgboost_params = list(CV_XGB = TRUE,
+                                                nfolds = 5,
+                                                nrounds = 50)),
+              params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
+                                     method = "RF",
+                                     tune_RF = FALSE,
+                                     xgboost_params = list(CV_XGB = TRUE,
+                                                           nfolds = 5,
+                                                           nrounds = 50),
+                                     type_model = "gaussian"),
+              boot_var = FALSE)
 
 
 }
