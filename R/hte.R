@@ -38,6 +38,7 @@
 #'  \code{nfolds = 5}, \code{nrounds = 50}.
 #'  \item type_model - type of outcome.
 #' }
+#' @param boot_var Compute bootstrap variance? Default: \code{boot_var = FALSE}
 #' @param ... Additional parameters
 #'
 #' @importFrom lme4 lmer glmer
@@ -116,14 +117,24 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                        xgboost_params = list(CV_XGB = TRUE,
                                                              nfolds = 5,
                                                              nrounds = 50),
-                                       type_model = "gaussian"), ...) {
+                                       type_model = "gaussian"),
+                boot_var = FALSE,
+                ...) {
 
   type_hte <- match.arg(type_hte)
   obj_hte <- list(data_sample = data_sample,
                   data_out_of_sample = data_out_of_sample)
   class(obj_hte) <- type_hte
 
+  # Estimate heterogenous treatment effects ---------------
+  estimate_hte <- estimate_hte(obj_hte = obj_hte,
+                               params_p_score = params_p_score,
+                               params_impute_y = params_impute_y,
+                               params_OR = params_OR)
 
+  if (boot_var) {
+
+  }
 
 }
 
