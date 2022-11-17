@@ -37,7 +37,13 @@
 #'  \code{nfolds = 5}, \code{nrounds = 50}.
 #'  \item type_model - type of outcome.
 #' }
-#' @param boot_var Compute bootstrap variance? Default: \code{boot_var = FALSE}
+#' @param params_bootstrap List with parameters to obtain bootstrap variance:
+#' \itemize{
+#'  \item boot_var = FALSE,
+#'  \item n_boot = 500,
+#'  \item boot_seed = 10,
+#' }
+#'
 #' @param ... Additional parameters
 #'
 #' @importFrom lme4 lmer glmer
@@ -102,51 +108,10 @@
 #'                                                      nfolds = 5,
 #'                                                      nrounds = 50),
 #'                                                      type_model = "gaussian"),
-#'                                      boot_var = FALSE)
+#'               params_bootstrap  = list(boot_var = TRUE,
+#'                                        n_boot = 250,
+#'                                        boot_seed = 10))
 #'
-#' hte_IPW <- hte(type_hte = "NIPW",
-#'               data_sample,
-#'               data_out_of_sample,
-#'               params_p_score = list(model_formula = A ~ X1 + (1|group),
-#'                           method = "RF",
-#'                           tune_RF = FALSE,
-#'                           xgboost_params = list(CV_XGB = TRUE,
-#'                                                 nfolds = 5,
-#'                                                 nrounds = 50)),
-#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
-#'                                      method = "EBLUP",
-#'                                      tune_RF = FALSE,
-#'                                      xgboost_params = list(CV_XGB = TRUE,
-#'                                                            nfolds = 5,
-#'                                                            nrounds = 50),
-#'                                      type_model = "gaussian"),
-#'                                      boot_var = FALSE)
-#'
-#'
-#' hte_AIPW <- hte(type_hte = "NIPW",
-#'               data_sample,
-#'               data_out_of_sample,
-#'               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-#'                                method = "EBLUP",
-#'                                tune_RF = FALSE,
-#'                                xgboost_params = list(CV_XGB = TRUE,
-#'                                                      nfolds = 5,
-#'                                                      nrounds = 50),
-#'                                                      type_model = "gaussian"),
-#'               params_p_score = list(model_formula = A ~ X1 + (1|group),
-#'                           method = "EBLUP",
-#'                           tune_RF = FALSE,
-#'                           xgboost_params = list(CV_XGB = TRUE,
-#'                                                 nfolds = 5,
-#'                                                 nrounds = 50)),
-#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
-#'                                      method = "RF",
-#'                                      tune_RF = FALSE,
-#'                                      xgboost_params = list(CV_XGB = TRUE,
-#'                                                            nfolds = 5,
-#'                                                            nrounds = 50),
-#'                                      type_model = "gaussian"),
-#'               boot_var = FALSE)
 #'
 #'
 hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
@@ -172,7 +137,9 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                                              nfolds = 5,
                                                              nrounds = 50),
                                        type_model = "gaussian"),
-                boot_var = FALSE,
+                params_bootstrap  = list(boot_var = FALSE,
+                                         n_boot = 500,
+                                         boot_seed = 10),
                 ...) {
 
   type_hte <- match.arg(type_hte)
@@ -186,11 +153,19 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                params_impute_y = params_impute_y,
                                params_OR = params_OR)
 
-  if (boot_var) {
-
+  if (params_bootstrap$boot_var) {
+    boot_var <- bootstrap_variance(obj_hte = obj_hte,
+                                   params_p_score = params_p_score,
+                                   params_impute_y = params_impute_y,
+                                   params_OR = params_OR,
+                                   n_boot = params_bootstrap$n_boot,
+                                   estimated_tau = estimate_hte$tau,
+                                   seed = params_bootstrap$boot_seed)
+    estimate_hte$var_tau <- boot_var
   }
 
   return(estimate_hte)
+
 }
 
 
@@ -205,6 +180,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
 #' \item{y_hat_sample}{predicted sample data using fitted model}
 #' \item{outcome_fit}{fitted model to impute the data}
 #'
+#' @importFrom dplyr select
 #' @importFrom lme4 lmer glmer
 #' @importFrom stats terms
 #' @importFrom grf regression_forest
@@ -252,13 +228,12 @@ estimate_hte.IPW <- function(obj_hte,
                              params_p_score,
                              params_impute_y,
                              ...) {
-
-  # Obtain IPW data -------------------------------------------
-a = Sys.time()
+  # Obtain IPW data  -------------------------------
   IPW_data <- obtain_IPW_data(obj_hte,
                               params_p_score,
                               params_impute_y)
-b = Sys.time()
+
+  # Estimate parameters ----------------------------------------------
   tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "HT"))
   return(tau_data)
 }
@@ -319,65 +294,6 @@ estimate_hte.AIPW <- function(obj_hte,
 
 }
 
-
-
-#' Fit propensity score
-#'
-#' Internal function to obtain subpopulation heterogenous treatment effects
-#'
-#' @inheritParams hte
-#' @param obj_hte Object to estimate hte
-#'
-#' @importFrom dplyr select
-#'
-#' @return Estimates of propensity score.
-#'
-
-
-fit_p_score <- function(obj_hte, params_p_score) {
-
-  a = Sys.time()
-  data_out_of_sample <- obj_hte$data_out_of_sample
-  names_out_of_sample <- names(data_out_of_sample)
-
-  data_sample <- obj_hte$data_sample
-  names_data_sample <- names(data_sample)
-
-  if (length(names_out_of_sample) == length(names_data_sample)) {
-    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-  } else {
-    y <- data_sample$y
-    data_sample_p_score <- select(data_sample, -y)
-    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-  }
-
-#  if ("y" %in% names_out_of_sample) {
-#    #    y <- data_out_of_sample$y
-#    y <- data_out_of_sample$y
-#    data_out_of_sample_p_score <- select(data_out_of_sample, -y)
-
-#    y <- data_sample$y
-#    data_sample_p_score <- select(data_sample, -y)
-
-#    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-#    obj_p_score <- list(data_p_score = data_p_score)
-#  } else {
-#    y <- data_sample$y
-#    data_sample_p_score <- select(data_sample, -y)
-#    data_p_score <- rbind(data_sample_p_score, data_out_of_sample_p_score)
-#    obj_p_score <- list(data_p_score = data_p_score)
-#  }
-  b = Sys.time()
-  class(obj_p_score) <- params_p_score$method
-
-  ps_hat <- p_score(obj_p_score = obj_p_score,
-                    model_formula = params_p_score$model_formula,
-                    xgboost_params = params_p_score$xgboost_params,
-                    tune_RF = params_p_score$tune_RF)
-
-  return(ps_hat)
-}
-
 #' Obtain IPW data
 #'
 #' Internal function to obtain data to fit IPW and NIPW estimators
@@ -391,19 +307,33 @@ fit_p_score <- function(obj_hte, params_p_score) {
 #'
 
 obtain_IPW_data <- function(obj_hte,
-                         params_p_score,
-                         params_impute_y) {
-  # Obtain fitted propensity score -------------------------------
-  a = Sys.time()
-  fitted_p_score <- fit_p_score(obj_hte = obj_hte,
-                                params_p_score = params_p_score)
-
-  b = Sys.time()
-  b -a
-  # Obtain imputation model -------------------------------
-  data_sample  = obj_hte$data_sample
+                            params_p_score,
+                            params_impute_y) {
+  # Pre-process data --------------------------------------------------
+  data_sample = obj_hte$data_sample
   data_out_of_sample = obj_hte$data_out_of_sample
 
+  names_out_of_sample <- names(data_out_of_sample)
+  names_data_sample <- names(data_sample)
+
+  # Propensity score estimation --------------------------------------
+  if (length(names_out_of_sample) == length(names_data_sample)) {
+    data_p_score <- rbind(data_sample, data_out_of_sample)
+  } else {
+    y <- data_sample$y
+    data_sample_p_score <- select(data_sample, -y)
+    data_p_score <- rbind(data_sample, data_out_of_sample)
+  }
+  obj_p_score <- list(data_p_score = data_p_score)
+  class(obj_p_score) <- params_p_score$method
+
+  ps_hat <- p_score(obj_p_score = obj_p_score,
+                    model_formula = params_p_score$model_formula,
+                    xgboost_params = params_p_score$xgboost_params,
+                    tune_RF = params_p_score$tune_RF)
+
+
+  # Imputation -------------------------------------------------
   imputed_y <- impute_y(model_formula = params_impute_y$model_formula,
                         data_sample = data_sample,
                         data_out_of_sample = data_out_of_sample,
@@ -415,9 +345,8 @@ obtain_IPW_data <- function(obj_hte,
   y_full_impute <- imputed_y$y_full_imputed
 
   IPW_data <- data.frame(y = y_full_impute,
-                                 A = c(data_sample$A, data_out_of_sample$A),
-                                 group = c(data_sample$group, data_out_of_sample$group),
-                                 p_score  = fitted_p_score)
+                         A = c(data_sample$A, data_out_of_sample$A),
+                         group = c(data_sample$group, data_out_of_sample$group),
+                         p_score  = fitted_p_score)
   return(IPW_data)
-
 }

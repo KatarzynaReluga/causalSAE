@@ -25,7 +25,7 @@ format_data_matrix <- function(data, select_row = 1:nrow(data),
 
 format_data <- function(model_formula,
                         data_sample,
-                        data_out_of_sample) {
+                        data_out_of_sample = NULL) {
 
   # Get the (predictor) variables
   vars <- attr(terms(model_formula), which = "term.labels")

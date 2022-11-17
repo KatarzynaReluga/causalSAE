@@ -5,16 +5,18 @@
 \title{Bootstrap variance}
 \usage{
 bootstrap_variance(
-  obj_hte = obj_hte,
-  params_p_score = params_p_score,
-  params_impute_y = params_impute_y,
-  params_OR = params_OR,
+  obj_hte,
+  params_p_score,
+  params_impute_y,
+  params_OR,
   n_boot = 1000,
   estimated_tau,
   seed = 1
 )
 }
 \arguments{
+\item{obj_hte}{Object to estimate hte}
+
 \item{params_p_score}{List with parameters to fit propensity score:
 \itemize{
 \item model_formula - model formula,
@@ -122,12 +124,18 @@ estimated_tau <- ht_OR$tau
 
 obj_hte <- list(data_sample = data_sample,
                data_out_of_sample = data_out_of_sample)
-class(obj_hte) <- type_hte
+class(obj_hte) <- "OR"
 
 
 boot_var <- bootstrap_variance(obj_hte = obj_hte,
-                               params_OR = params_OR,
-                               n_boot = 500,
+                               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+                                                method = "EBLUP",
+                                                tune_RF = FALSE,
+                                                xgboost_params = list(CV_XGB = TRUE,
+                                                                      nfolds = 5,
+                                                                      nrounds = 50),
+                                                          type_model = "gaussian"),
+                               n_boot = 100,
                                estimated_tau = estimated_tau,
                                seed = 1)
 

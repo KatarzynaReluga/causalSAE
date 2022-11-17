@@ -283,9 +283,9 @@ imputation_y.RF <- function(obj_imputation_y,
     outcome_fit <- regression_forest(X, Y, clusters = clusters)
   }
 
-  y_hat_out_of_sample <- predict(outcome_fit, newdata = X_newdata)
+  y_hat_out_of_sample <- unname(unlist(predict(outcome_fit, newdata = X_newdata)))
 
-  y_hat_sample <- predict(outcome_fit, newdata = X)
+  y_hat_sample <- unname(unlist(predict(outcome_fit, newdata = X)))
 
   output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
                  y_hat_sample = y_hat_sample,

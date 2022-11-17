@@ -3,6 +3,7 @@
 #' Calculate bootstrap variance
 #'
 #' @inheritParams hte
+#' @param obj_hte Object to estimate hte
 #' @param n_boot Number of bootstrap samples
 #' @param estimated_tau Estimated value of parameter tau
 #' @param seed Seed to repeat the simulations
@@ -73,22 +74,28 @@
 #'
 #' obj_hte <- list(data_sample = data_sample,
 #'                data_out_of_sample = data_out_of_sample)
-#' class(obj_hte) <- type_hte
+#' class(obj_hte) <- "OR"
 #'
 #'
 #' boot_var <- bootstrap_variance(obj_hte = obj_hte,
-#'                                params_OR = params_OR,
-#'                                n_boot = 500,
+#'                                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+#'                                                 method = "EBLUP",
+#'                                                 tune_RF = FALSE,
+#'                                                 xgboost_params = list(CV_XGB = TRUE,
+#'                                                                       nfolds = 5,
+#'                                                                       nrounds = 50),
+#'                                                           type_model = "gaussian"),
+#'                                n_boot = 100,
 #'                                estimated_tau = estimated_tau,
 #'                                seed = 1)
 #'
 #'
 #'
 #'
-bootstrap_variance <- function(obj_hte = obj_hte,
-                               params_p_score = params_p_score,
-                               params_impute_y = params_impute_y,
-                               params_OR = params_OR,
+bootstrap_variance <- function(obj_hte,
+                               params_p_score,
+                               params_impute_y,
+                               params_OR,
                                n_boot = 1000,
                                estimated_tau,
                                seed = 1) {
@@ -109,7 +116,7 @@ bootstrap_variance <- function(obj_hte = obj_hte,
   for (i in 1:n_boot) {
     #print(i)
     # Modulus operation
-    if(i %% 20==0) {
+    if(i %% 10==0) {
       # Print on the screen some message
       cat(paste0("Bootstrap iteration: ", i, "\n"))
     }

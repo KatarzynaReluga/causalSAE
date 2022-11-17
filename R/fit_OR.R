@@ -15,7 +15,13 @@ fit_OR <- function(obj_hte,
                    params_OR) {
 
   # Full data --------------------------
-  data_full <- rbind(obj_hte$data_sample, obj_hte$data_out_of_sample)
+ if (params_OR$method == "RF"|params_OR$method == "XGB") {
+  formatted_data <- format_data(model_formula = params_OR$model_formula,
+                                  data_sample = rbind(obj_hte$data_sample, obj_hte$data_out_of_sample))
+  data_full <- formatted_data$X
+ } else {
+   data_full <- rbind(obj_hte$data_sample, obj_hte$data_out_of_sample)
+ }
   data_sample  = obj_hte$data_sample
   data_out_of_sample = obj_hte$data_out_of_sample
 
@@ -31,8 +37,8 @@ fit_OR <- function(obj_hte,
                   xgboost_params = params_OR$xgboost_params)
 
 
-  mu0_y <- predict(object = OR0$outcome_fit, newdata = data_full,
-                   allow.new.levels = TRUE)
+  mu0_y <-  unname(unlist(predict(object = OR0$outcome_fit, newdata = data_full,
+                   allow.new.levels = TRUE)))
 
   # Treated --------------------------------------
   data_sample1 = data_sample[data_sample$A == 1, ]
@@ -45,8 +51,8 @@ fit_OR <- function(obj_hte,
                   tune_RF = params_OR$tune_RF,
                   xgboost_params = params_OR$xgboost_params)
 
-  mu1_y <- predict(OR1$outcome_fit, newdata = data_full,
-                   allow.new.levels = TRUE)
+  mu1_y <- unname(unlist(predict(OR1$outcome_fit, newdata = data_full,
+                   allow.new.levels = TRUE)))
   data_OR <- data.frame(mu1_y = mu1_y,
                         mu0_y = mu0_y,
                         group = c(data_sample$group, data_out_of_sample$group))

@@ -16,7 +16,7 @@ hte(
   params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A || group), method =
     "EBLUP", tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
     50), type_model = "gaussian"),
-  boot_var = FALSE,
+  params_bootstrap = list(boot_var = FALSE, n_boot = 500, boot_seed = 10),
   ...
 )
 }
@@ -63,7 +63,12 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item type_model - type of outcome.
 }}
 
-\item{boot_var}{Compute bootstrap variance? Default: \code{boot_var = FALSE}}
+\item{params_bootstrap}{List with parameters to obtain bootstrap variance:
+\itemize{
+\item boot_var = FALSE,
+\item n_boot = 500,
+\item boot_seed = 10,
+}}
 
 \item{...}{Additional parameters}
 }
@@ -126,51 +131,10 @@ hte_OR <- hte(type_hte = "OR",
                                                      nfolds = 5,
                                                      nrounds = 50),
                                                      type_model = "gaussian"),
-                                     boot_var = FALSE)
+              params_bootstrap  = list(boot_var = TRUE,
+                                       n_boot = 250,
+                                       boot_seed = 10))
 
-hte_IPW <- hte(type_hte = "NIPW",
-              data_sample,
-              data_out_of_sample,
-              params_p_score = list(model_formula = A ~ X1 + (1|group),
-                          method = "RF",
-                          tune_RF = FALSE,
-                          xgboost_params = list(CV_XGB = TRUE,
-                                                nfolds = 5,
-                                                nrounds = 50)),
-              params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
-                                     method = "EBLUP",
-                                     tune_RF = FALSE,
-                                     xgboost_params = list(CV_XGB = TRUE,
-                                                           nfolds = 5,
-                                                           nrounds = 50),
-                                     type_model = "gaussian"),
-                                     boot_var = FALSE)
-
-
-hte_AIPW <- hte(type_hte = "NIPW",
-              data_sample,
-              data_out_of_sample,
-              params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                               method = "EBLUP",
-                               tune_RF = FALSE,
-                               xgboost_params = list(CV_XGB = TRUE,
-                                                     nfolds = 5,
-                                                     nrounds = 50),
-                                                     type_model = "gaussian"),
-              params_p_score = list(model_formula = A ~ X1 + (1|group),
-                          method = "EBLUP",
-                          tune_RF = FALSE,
-                          xgboost_params = list(CV_XGB = TRUE,
-                                                nfolds = 5,
-                                                nrounds = 50)),
-              params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
-                                     method = "RF",
-                                     tune_RF = FALSE,
-                                     xgboost_params = list(CV_XGB = TRUE,
-                                                           nfolds = 5,
-                                                           nrounds = 50),
-                                     type_model = "gaussian"),
-              boot_var = FALSE)
 
 
 }

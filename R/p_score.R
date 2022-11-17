@@ -108,10 +108,10 @@ p_score.EBLUP <- function(obj_p_score,
                           ...) {
 
   data_p_score <- obj_p_score$data_p_score
-
+  #a = Sys.time()
   ps_fit <- glmer(model_formula, data = data.frame(data_p_score),
                   family = binomial(link = "logit"))
-
+  #b = Sys.time()
   ps_hat <- as.vector(predict(ps_fit,
                               newdata = data_p_score,
                               type = "response",
@@ -143,13 +143,15 @@ p_score.MQ <- function(obj_p_score,
   predictor <- paste(vars[-length(vars)], collapse = " + ")
 
   # Build a formula
+  model_formulaMQ <- paste(response, " ~ ", predictor)
 
   ps_fit <- mquantreg(formula = model_formulaMQ,
                       data = data_p_score,
                       q  = 0.5, method = "binom")
 
-  ps_hat <- unname(unlist(predict(ps_fit, newdata = data_p_score,
-                                  regression_type = "binary")))
+#  ps_hat <- unname(unlist(predict(ps_fit, newdata = data_p_score,
+#                                  regression_type = "binary")))
+  ps_hat <- predict(ps_fit, newdata = data_p_score, regression_type = "binary")
 
   return(ps_hat)
 

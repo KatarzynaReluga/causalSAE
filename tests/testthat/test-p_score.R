@@ -4,7 +4,7 @@ set.seed(123456)
 
 m = 50
 ni = rep(5, m)
-Ni = rep(100, m)
+Ni = rep(1000, m)
 N = sum(Ni)
 n = sum(ni)
 
@@ -32,7 +32,7 @@ populations <- generate_pop(
   rand_eff_outcome = get_default_rand_eff_outcome(),
   rand_eff_p_score = get_default_rand_eff_p_score(),
   regression_type = "continuous",
-  Ni_size  = 100,
+  Ni_size  = 1000,
   m = 50,
   no_sim = 1,
   seed = 10
@@ -46,7 +46,6 @@ class(obj_p_score_EBLUP) <- "EBLUP"
 
 ps_hat_EBLUP <-  p_score(obj_p_score = obj_p_score_EBLUP,
                          model_formula = A ~ X1 + (1 | group))
-
 # MQ
 
 obj_p_score_MQ <- list(data_p_score = populations)
