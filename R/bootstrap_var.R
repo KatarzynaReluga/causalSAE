@@ -91,7 +91,7 @@
 #'
 #'
 #'
-#'
+
 bootstrap_variance <- function(obj_hte,
                                params_p_score,
                                params_impute_y,
