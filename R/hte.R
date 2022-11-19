@@ -347,6 +347,6 @@ obtain_IPW_data <- function(obj_hte,
   IPW_data <- data.frame(y = y_full_impute,
                          A = c(data_sample$A, data_out_of_sample$A),
                          group = c(data_sample$group, data_out_of_sample$group),
-                         p_score  = fitted_p_score)
+                         p_score  = ps_hat)
   return(IPW_data)
 }

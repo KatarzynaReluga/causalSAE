@@ -1,5 +1,6 @@
 # Model based simulations
-
+setwd("./causalSAE")
+devtools::load_all()
 m = 50
 ni = rep(10, m)
 Ni = rep(100, m)
@@ -126,18 +127,7 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   # Direct estimators
   # Direct EBLUP
 
-  Dir_EBLUP <- (calculate_tau(list(data_sample), type_tau = "H"))[[1]]$tau
-
-  # Direct MQ
-  Dir_MQ <- (calculate_tau(list(data_sample), type_tau = "H"))[[1]]$tau
-
-  # Direct RF
-  Dir_RF <- (calculate_tau(list(data_sample), type_tau = "H"))[[1]]$tau
-
-  # Direct XGB
-  Dir_XGB <- (calculate_tau(list(data_sample), type_tau = "H"))[[1]]$tau
-
-
+  Dir_tau <- (calculate_tau(list(data_sample), type_tau = "H"))[[1]]$tau
 
   # Bootstrap samples ----------------------------------------------------------------------
 
@@ -151,10 +141,6 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   RF_var = matrix(0, nrow = n_boot, ncol = m)
   XGB_var = matrix(0, nrow = n_boot, ncol = m)
 #}
-  Dir_EBLUP_var = matrix(0, nrow = n_boot, ncol = m)
-  Dir_MQ_var = matrix(0, nrow = n_boot, ncol = m)
-  Dir_RF_var = matrix(0, nrow = n_boot, ncol = m)
-  Dir_XGB_var = matrix(0, nrow = n_boot, ncol = m)
 
   a = Sys.time()
   for (i in 1:n_boot) {
@@ -243,22 +229,19 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   ###########################################################################
   # Store results in the list - standard for baobab.                         #
   ############################################################################
-  Results = list(EBLUP_OR_var = EBLUP_OR_var,
-                 MQ_OR_var = MQ_OR_var,
-                 RF_OR_var = RF_OR_var,
-                 XGB_OR_var = XGB_OR_var,
-
-                 EBLUP_OR = EBLUP_OR,
+  Results = list(EBLUP_OR = EBLUP_OR,
                  MQ_OR = MQ_OR,
                  RF_OR = RF_OR,
                  XGB_OR = XGB_OR,
 
-                 Dir_EBLUP = Dir_EBLUP,
-                 Dir_MQ = Dir_MQ,
-                 Dir_RF = Dir_RF,
-                 Dir_XGB = Dir_XGB)
+                 EBLUP_OR_var = EBLUP_OR_var,
+                 MQ_OR_var = MQ_OR_var,
+                 RF_OR_var = RF_OR_var,
+                 XGB_OR_var = XGB_OR_var,
 
-  outputName = paste("sim_OR_",a,".RData",sep="")
+                 Dir_tau = Dir_tau)
+
+  outputName = paste("sim_OR_", a, ".RData",sep="")
   outputPath = file.path("/home/reluga/Comp", outputName)
   #outputPath=file.path("C:/Users/katar/Documents/Paper_3/sim_P_30u1e1",outputName)
   save("Results", file = outputPath)

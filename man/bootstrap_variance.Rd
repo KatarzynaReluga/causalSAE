@@ -141,5 +141,4 @@ boot_var <- bootstrap_variance(obj_hte = obj_hte,
 
 
 
-
 }
