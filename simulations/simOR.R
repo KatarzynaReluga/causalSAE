@@ -1,6 +1,10 @@
 # Model based simulations
 setwd("./causalSAE")
 devtools::load_all()
+
+# Set seed
+set.seed(100)
+
 m = 50
 ni = rep(10, m)
 Ni = rep(100, m)
@@ -38,34 +42,17 @@ populations <- generate_pop(X, X_outcome,
                             no_sim = 1,
                             seed = 10)
 
-#NoSim <- 100
+tau_true <- calculate_tau(list(populations), type_tau = "H")
 
-# OR ----------------------------
-# HTE
-#EBLUP_OR <- matrix(NA, NoSim, m)
-#MQ_OR <- matrix(NA, NoSim, m)
-#RF_OR <- matrix(NA, NoSim, m)
-#XGB_OR <- matrix(NA, NoSim, m)
-# var
-#EBLUP_OR_var <- matrix(NA, NoSim, m)
-#MQ_OR_var <- matrix(NA, NoSim, m)
-#RF_OR_var <- matrix(NA, NoSim, m)
-#XGB_OR_var <- matrix(NA, NoSim, m)
-
-i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 # Simple checks of the code ------------------------------------------------------------------
 #for (i in 1:NoSim) {
-
+#a  = Sys.time()
 #  print(i)
-  set.seed(i * 2022)
+  set.seed(a * 2022)
 
   subpopulation <- sample_subpopulations(populations, frac_nc = 0.05, frac_nt = 0.05)
-#  samples <- generate_sample(populations, ni_size = 10,
-#                             sample_part = "sampled",
-#                             get_index = TRUE)
-
   data_sample <- data.frame(populations[subpopulation, ])
-#  index_sample <- samples[[1]]$index_s
   data_out_of_sample <- populations[-subpopulation, ]
 
 
@@ -124,17 +111,13 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                                  type_model = "continuous"))
   XGB_OR <- XGB_ORf$tau
 
-  # Direct estimators
-  # Direct EBLUP
-
-  Dir_tau <- (calculate_tau(list(data_sample), type_tau = "H"))[[1]]$tau
 
   # Bootstrap samples ----------------------------------------------------------------------
 
   bootstrap_indices <- sample_bootstrap_indices(sample_sizes = as.data.frame(table(data_sample$group))$Freq,
                                                 out_of_sample_sizes = as.data.frame(table(data_out_of_sample$group))$Freq,
                                                 n_boot = n_boot,
-                                                seed = 2 * i)
+                                                seed = 2 * a)
 
   EBLUP_var = matrix(0, nrow = n_boot, ncol = m)
   MQ_var = matrix(0, nrow = n_boot, ncol = m)
@@ -142,7 +125,7 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   XGB_var = matrix(0, nrow = n_boot, ncol = m)
 #}
 
-  a = Sys.time()
+
   for (i in 1:n_boot) {
     #print(i)
     # Modulus operation
@@ -219,7 +202,7 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                                     type_model = "continuous"))$tau
 
   }
-  b = Sys.time()
+#  b = Sys.time()
   EBLUP_OR_var <- colMeans((EBLUP_var - EBLUP_OR) ^ 2)
   MQ_OR_var <- colMeans((MQ_var - MQ_OR) ^ 2)
   RF_OR_var <- colMeans((RF_var - RF_OR) ^ 2)
@@ -237,9 +220,7 @@ i = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                  EBLUP_OR_var = EBLUP_OR_var,
                  MQ_OR_var = MQ_OR_var,
                  RF_OR_var = RF_OR_var,
-                 XGB_OR_var = XGB_OR_var,
-
-                 Dir_tau = Dir_tau)
+                 XGB_OR_var = XGB_OR_var)
 
   outputName = paste("sim_OR_", a, ".RData",sep="")
   outputPath = file.path("/home/reluga/Comp", outputName)

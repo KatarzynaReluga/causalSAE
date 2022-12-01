@@ -1,11 +1,14 @@
 # Model based simulations
 
 m = 50
-ni = rep(5, m)
-Ni = rep(50, m)
+ni = rep(10, m)
+Ni = rep(100, m)
 N = sum(Ni)
 n = sum(ni)
 
+n_boot = 500
+
+# Generate covariates
 X <- generate_X(
   n = N,
   p = 1,
@@ -22,13 +25,14 @@ X_outcome <- generate_X(
   seed = 1
 )
 
+# Generate populations
 populations <- generate_pop(X, X_outcome,
                             coeffs = get_default_coeffs(),
                             errors_outcome = get_default_errors_outcome(),
                             rand_eff_outcome = get_default_rand_eff_outcome(),
                             rand_eff_p_score = get_default_rand_eff_p_score(),
                             regression_type = "continuous",
-                            Ni_size = 50,
+                            Ni_size = 100,
                             m = 50,
                             no_sim = 1,
                             seed = 10)
