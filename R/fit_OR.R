@@ -56,5 +56,12 @@ fit_OR <- function(obj_hte,
   data_OR <- data.frame(mu1_y = mu1_y,
                         mu0_y = mu0_y,
                         group = c(data_sample$group, data_out_of_sample$group))
+#  fit0 <- OR0$outcome_fit
+#  fit1 <- OR1$outcome_fit
+
+#  output <-list(data_OR = data_OR,
+#                fit0 = fit0,
+#                fit1 = fit1)
+
   return(data_OR)
 }

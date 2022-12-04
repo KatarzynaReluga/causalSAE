@@ -7,6 +7,7 @@
 sample_bootstrap_indices(
   sample_sizes,
   out_of_sample_sizes,
+  type_boot,
   n_boot = 50,
   seed = 1
 )
@@ -16,9 +17,16 @@ sample_bootstrap_indices(
 
 \item{out_of_sample_sizes}{Data from the population}
 
+\item{type_boot}{Type of bootstrap sampling}
+
 \item{n_boot}{Number of bootstrap samples}
 
 \item{seed}{Seed to run simulations.}
+}
+\value{
+List with following parameters:
+\item{ind_population}{Vector with population indices}
+\item{ind_sample}{Vector with sample indices}
 }
 \description{
 Sample bootstrap indices
@@ -73,7 +81,7 @@ out_of_sample_sizes = as.data.frame(table(data_out_of_sample$group))$Freq
 
 bootstrap_indices <- sample_bootstrap_indices(sample_sizes,
                                                 out_of_sample_sizes,
+                                                type_boot = "sample",
                                                 n_boot = 500,
                                                 seed = 1)
-
 }

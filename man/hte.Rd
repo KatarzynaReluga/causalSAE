@@ -16,7 +16,8 @@ hte(
   params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A || group), method =
     "EBLUP", tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
     50), type_model = "gaussian"),
-  params_bootstrap = list(boot_var = FALSE, n_boot = 500, boot_seed = 10),
+  params_bootstrap = list(boot_var = FALSE, n_boot = 500, boot_seed = 10, type_boot =
+    "both"),
   ...
 )
 }
@@ -126,14 +127,11 @@ hte_OR <- hte(type_hte = "OR",
               data_out_of_sample,
               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                method = "EBLUP",
-                               tune_RF = FALSE,
-                               xgboost_params = list(CV_XGB = TRUE,
-                                                     nfolds = 5,
-                                                     nrounds = 50),
-                                                     type_model = "gaussian"),
+                               type_model = "gaussian"),
               params_bootstrap  = list(boot_var = TRUE,
                                        n_boot = 250,
-                                       boot_seed = 10))
+                                       boot_seed = 10,
+                                       type_boot = "sample"))
 
 
 

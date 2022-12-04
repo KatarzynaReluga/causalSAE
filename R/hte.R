@@ -103,14 +103,11 @@
 #'               data_out_of_sample,
 #'               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
 #'                                method = "EBLUP",
-#'                                tune_RF = FALSE,
-#'                                xgboost_params = list(CV_XGB = TRUE,
-#'                                                      nfolds = 5,
-#'                                                      nrounds = 50),
-#'                                                      type_model = "gaussian"),
+#'                                type_model = "gaussian"),
 #'               params_bootstrap  = list(boot_var = TRUE,
 #'                                        n_boot = 250,
-#'                                        boot_seed = 10))
+#'                                        boot_seed = 10,
+#'                                        type_boot = "sample"))
 #'
 #'
 #'
@@ -139,7 +136,8 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                        type_model = "gaussian"),
                 params_bootstrap  = list(boot_var = FALSE,
                                          n_boot = 500,
-                                         boot_seed = 10),
+                                         boot_seed = 10,
+                                         type_boot = "both"),
                 ...) {
 
   type_hte <- match.arg(type_hte)
@@ -160,7 +158,8 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                    params_OR = params_OR,
                                    n_boot = params_bootstrap$n_boot,
                                    estimated_tau = estimate_hte$tau,
-                                   seed = params_bootstrap$boot_seed)
+                                   seed = params_bootstrap$boot_seed,
+                                   type_boot = params_bootstrap$type_boot)
     estimate_hte$var_tau <- boot_var
   }
 
@@ -206,15 +205,24 @@ estimate_hte.OR <- function(obj_hte,
 
   data_OR <- fit_OR(obj_hte, params_OR)
 
+#  data_OR <- fit_OR$data_OR
+#  fit0 <- fit_OR$fit0
+#  fit1 <- fit_OR$fit1
+
   tau_treat = aggregate(data_OR$mu1_y, list(data_OR$group), FUN = mean)$x
   tau_untreat = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
   tau = tau_treat - tau_untreat
 
-  output <- data.frame(tau_treat = tau_treat,
-                 tau_untreat = tau_untreat,
-                 tau = tau,
-                 group_name = unique(data_OR$group))
-  return(output)
+  data_tau <- data.frame(tau_treat = tau_treat,
+                         tau_untreat = tau_untreat,
+                         tau = tau,
+                         group_name = unique(data_OR$group))
+
+#  output <- list(data_tau = data_tau,
+#                 m1_y = data_OR$mu1_y,
+#                 m0_y = data_OR$mu0_y)
+
+  return(data_tau)
 
   }
 

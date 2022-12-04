@@ -11,6 +11,7 @@ bootstrap_variance(
   params_OR,
   n_boot = 1000,
   estimated_tau,
+  type_boot = c("sample", "both"),
   seed = 1
 )
 }
@@ -55,6 +56,8 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item{n_boot}{Number of bootstrap samples}
 
 \item{estimated_tau}{Estimated value of parameter tau}
+
+\item{type_boot}{Type of bootstrap sampling}
 
 \item{seed}{Seed to repeat the simulations}
 }
@@ -114,10 +117,6 @@ ht_OR <- hte(type_hte = "OR",
              params_p_estimate = NULL,
              params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                               method = "EBLUP",
-                              tune_RF = FALSE,
-                              xgboost_params = list(CV_XGB = TRUE,
-                                                    nfolds = 5,
-                                                    nrounds = 50),
                                type_model = "gaussian"))
 
 estimated_tau <- ht_OR$tau
@@ -130,13 +129,10 @@ class(obj_hte) <- "OR"
 boot_var <- bootstrap_variance(obj_hte = obj_hte,
                                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                                 method = "EBLUP",
-                                                tune_RF = FALSE,
-                                                xgboost_params = list(CV_XGB = TRUE,
-                                                                      nfolds = 5,
-                                                                      nrounds = 50),
-                                                          type_model = "gaussian"),
+                                                type_model = "gaussian"),
                                n_boot = 100,
                                estimated_tau = estimated_tau,
+                               type_boot = "sample",
                                seed = 1)
 
 

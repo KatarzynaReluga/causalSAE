@@ -7,6 +7,7 @@
 #' @param n_boot Number of bootstrap samples
 #' @param estimated_tau Estimated value of parameter tau
 #' @param seed Seed to repeat the simulations
+#' @param type_boot Type of bootstrap sampling
 #'
 #' @return
 #' \item{var_tau}{Bootstrap variance of parameter tau}
@@ -64,10 +65,6 @@
 #'              params_p_estimate = NULL,
 #'              params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
 #'                               method = "EBLUP",
-#'                               tune_RF = FALSE,
-#'                               xgboost_params = list(CV_XGB = TRUE,
-#'                                                     nfolds = 5,
-#'                                                     nrounds = 50),
 #'                                type_model = "gaussian"))
 #'
 #' estimated_tau <- ht_OR$tau
@@ -80,13 +77,10 @@
 #' boot_var <- bootstrap_variance(obj_hte = obj_hte,
 #'                                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
 #'                                                 method = "EBLUP",
-#'                                                 tune_RF = FALSE,
-#'                                                 xgboost_params = list(CV_XGB = TRUE,
-#'                                                                       nfolds = 5,
-#'                                                                       nrounds = 50),
-#'                                                           type_model = "gaussian"),
+#'                                                 type_model = "gaussian"),
 #'                                n_boot = 100,
 #'                                estimated_tau = estimated_tau,
+#'                                type_boot = "sample",
 #'                                seed = 1)
 #'
 #'
@@ -98,25 +92,28 @@ bootstrap_variance <- function(obj_hte,
                                params_OR,
                                n_boot = 1000,
                                estimated_tau,
+                               type_boot = c("sample", "both"),
                                seed = 1) {
 
   # Retrieve sample sizes ----------------------------------------------------
 
   data_sample <- obj_hte$data_sample
   data_out_of_sample <- obj_hte$data_out_of_sample
+  type_boot <- match.arg(type_boot)
 
   bootstrap_indices <- sample_bootstrap_indices(sample_sizes = as.data.frame(table(data_sample$group))$Freq,
                                                 out_of_sample_sizes = as.data.frame(table(data_out_of_sample$group))$Freq,
                                                 n_boot = n_boot,
+                                                type_boot = type_boot,
                                                 seed = seed)
 
   tau_boot = matrix(0, nrow = n_boot, ncol = length(estimated_tau))
 
 #  a = Sys.time()
-  for (i in 1:n_boot) {
+  for (i in 1 : n_boot) {
     #print(i)
     # Modulus operation
-    if(i %% 10==0) {
+    if(i %% 10 == 0) {
       # Print on the screen some message
       cat(paste0("Bootstrap iteration: ", i, "\n"))
     }
@@ -157,8 +154,13 @@ bootstrap_variance <- function(obj_hte,
 #' @param out_of_sample_sizes Data from the population
 #' @param n_boot Number of bootstrap samples
 #' @param seed Seed to run simulations.
+#' @param type_boot Type of bootstrap sampling
 #'
 #' @importFrom sampling strata
+#'
+#' @return List with following parameters:
+#' \item{ind_population}{Vector with population indices}
+#' \item{ind_sample}{Vector with sample indices}
 #'
 #' @export
 #'
@@ -212,14 +214,92 @@ bootstrap_variance <- function(obj_hte,
 #'
 #' bootstrap_indices <- sample_bootstrap_indices(sample_sizes,
 #'                                                 out_of_sample_sizes,
+#'                                                 type_boot = "sample",
 #'                                                 n_boot = 500,
 #'                                                 seed = 1)
-#'
+
 
 sample_bootstrap_indices <- function(sample_sizes,
                                      out_of_sample_sizes,
+                                     type_boot,
                                      n_boot = 50,
                                      seed = 1) {
+
+
+  obj_boot <- list(sample_sizes = sample_sizes,
+                   out_of_sample_sizes = out_of_sample_sizes)
+  class(obj_boot) <- type_boot
+
+  boot_indices <- boot_indices_internal(obj_boot,
+                                        n_boot = n_boot,
+                                        seed = seed)
+
+  return(boot_indices)
+
+}
+
+#'
+#' Bootstrap indices
+#'
+#' Internal generic function to obtain bootstrap indices
+#'
+#' @inheritParams sample_bootstrap_indices
+#' @param obj_boot Object to estimate hte
+#' @param ... Additional parameters
+#'
+#' @return List with following parameters:
+#' \item{ind_population}{Vector with population indices}
+#' \item{ind_sample}{Vector with sample indices}
+#'
+#'
+
+
+boot_indices_internal <- function(...)
+  UseMethod("boot_indices_internal")
+
+#'
+#' @describeIn boot_indices_internal Obtain bootstrap indices bootstrapping withing the sample
+#' @export
+#'
+
+
+boot_indices_internal.sample <- function(obj_boot,
+                                         n_boot = 50,
+                                         seed = 1,
+                                         ...) {
+
+  sample_sizes = obj_boot$sample_sizes
+  out_of_sample_sizes = obj_boot$out_of_sample_sizes
+
+
+  indices <- list()
+  for (i in 1:n_boot) {
+    seed_sim = seed * i
+    indices[[i]] <- list(ind_population = 1 : sum(out_of_sample_sizes),
+                         ind_sample = sample_indices(sample_sizes = sample_sizes,
+                                                     swr = TRUE,
+                                                     seed = seed_sim * 2))
+  }
+  return(indices)
+
+}
+
+
+#'
+#' @describeIn boot_indices_internal Obtain bootstrap indices bootstrapping withing the sample
+#' @export
+#'
+
+
+boot_indices_internal.both <- function(obj_boot,
+                                         n_boot = 50,
+                                         seed = 1,
+                                         ...) {
+
+  sample_sizes = obj_boot$sample_sizes
+  out_of_sample_sizes = obj_boot$out_of_sample_sizes
+
+
   indices <- list()
   for (i in 1:n_boot) {
     seed_sim = seed * i
@@ -234,6 +314,8 @@ sample_bootstrap_indices <- function(sample_sizes,
 
 }
 
+
+#'
 #' Sample indices
 #'
 #' @param sample_sizes Sample sizes
@@ -248,6 +330,9 @@ sample_bootstrap_indices <- function(sample_sizes,
 sample_indices <- function(sample_sizes,
                            swr = TRUE,
                            seed = 10) {
+
+  #
+  set.seed(seed)
 
   # Cumulative sum
   cum_sample_sizes <- cumsum(sample_sizes)
