@@ -3,6 +3,7 @@
 #' @param one_pop Population to sample from
 #' @param frac_nc Fraction of controls in each subpopulation
 #' @param frac_nt Fraction of treated in each subpopulation
+#' @param seed Seed to repeat the simulations
 #'
 #' @export
 #'
@@ -42,10 +43,13 @@
 #' seed = 1)
 #'
 #' subpopulation <- sample_subpopulations(populations,
-#' frac_nc = 0.1, frac_nt = 0.1)
+#' frac_nc = 0.1, frac_nt = 0.1, seed = 1)
 #'
 
-sample_subpopulations <- function(one_pop, frac_nc, frac_nt) {
+sample_subpopulations <- function(one_pop, frac_nc,
+                                  frac_nt, seed = 1) {
+
+  set.seed(seed)
 
   one_pop_df <- data.frame(one_pop)
   one_pop_df$index <- 1:dim(one_pop_df)[1]

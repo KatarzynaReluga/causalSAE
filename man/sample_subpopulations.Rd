@@ -4,7 +4,7 @@
 \alias{sample_subpopulations}
 \title{Sample subpopulations}
 \usage{
-sample_subpopulations(one_pop, frac_nc, frac_nt)
+sample_subpopulations(one_pop, frac_nc, frac_nt, seed = 1)
 }
 \arguments{
 \item{one_pop}{Population to sample from}
@@ -12,6 +12,8 @@ sample_subpopulations(one_pop, frac_nc, frac_nt)
 \item{frac_nc}{Fraction of controls in each subpopulation}
 
 \item{frac_nt}{Fraction of treated in each subpopulation}
+
+\item{seed}{Seed to repeat the simulations}
 }
 \description{
 Sample subpopulations
@@ -52,6 +54,6 @@ no_sim = 1,
 seed = 1)
 
 subpopulation <- sample_subpopulations(populations,
-frac_nc = 0.1, frac_nt = 0.1)
+frac_nc = 0.1, frac_nt = 0.1, seed = 1)
 
 }

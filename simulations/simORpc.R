@@ -54,7 +54,7 @@ XGB_boot = matrix(0, nrow = n_boot, ncol = m)
 
 a  = Sys.time()
 registerDoParallel(14)
-resEBLUP <- foreach (i = 15:28) %dopar% {
+resEBLUP <- foreach (i = 1:14) %dopar% {
   set.seed(i * 2022)
 
   devtools::load_all()
@@ -64,61 +64,52 @@ resEBLUP <- foreach (i = 15:28) %dopar% {
   data_out_of_sample <- populations[-subpopulation, ]
 
 
-  # EBLUP OR --------------------------------------------------------------------------------
+  # OR -------------------------------------------------------------------
+  # EBLUP OR
   EBLUP_ORf <- hte(type_hte = "OR",
-                data_sample,
-                data_out_of_sample,
-                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                                  method = "EBLUP",
-                                  tune_RF = FALSE,
-                                  xgboost_params = list(CV_XGB = TRUE,
-                                                        nfolds = 5,
-                                                        nrounds = 50),
-                                                        type_model = "gaussian"))
-  EBLUP_OR <- EBLUP_ORf$tau
-
-  # MQ OR ------------------------------------------------------------------------------------
-  MQ_ORf <- hte(type_hte = "OR",
                    data_sample,
                    data_out_of_sample,
                    params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                                    method = "MQ",
-                                    tune_RF = FALSE,
-                                    xgboost_params = list(CV_XGB = TRUE,
-                                                          nfolds = 5,
-                                                          nrounds = 50),
-                                    type_model = "continuous"))
+                                    method = "EBLUP",
+                                    type_model = "gaussian"))
+  EBLUP_OR <- EBLUP_ORf$tau
+
+  # MQ OR
+  MQ_ORf <- hte(type_hte = "OR",
+                data_sample,
+                data_out_of_sample,
+                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+                                 method = "MQ",
+                                 type_model = "continuous"))
   MQ_OR <- MQ_ORf$tau
 
-  # RF OR -------------------------------------------------------------------------------------
+  # RF OR
+
   RF_ORf <- hte(type_hte = "OR",
                 data_sample,
                 data_out_of_sample,
                 params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                  method = "RF",
-                                 tune_RF = FALSE,
-                                 xgboost_params = list(CV_XGB = TRUE,
-                                                       nfolds = 5,
-                                                       nrounds = 50),
-                                 type_model = "continuous"))
+                                 tune_RF = FALSE))
   RF_OR <- RF_ORf$tau
 
-  # EBLUP XGB ---------------------------------------------------------------------------------
+  # EBLUP XGB
+
   XGB_ORf <- hte(type_hte = "OR",
-                data_sample,
-                data_out_of_sample,
-                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                                 method = "XGB",
-                                 tune_RF = FALSE,
-                                 xgboost_params = list(CV_XGB = FALSE,
-                                                       nfolds = 5,
-                                                       nrounds = 50),
-                                 type_model = "continuous"))
+                 data_sample,
+                 data_out_of_sample,
+                 params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
+                                  method = "XGB",
+                                  xgboost_params = list(CV_XGB = FALSE,
+                                                        nfolds = 5,
+                                                        nrounds = 50)))
   XGB_OR <- XGB_ORf$tau
+
 
   # Bootstrap samples ----------------------------------------------------------------------
   bootstrap_indices <- sample_bootstrap_indices(sample_sizes = as.data.frame(table(data_sample$group))$Freq,
                                                 out_of_sample_sizes = as.data.frame(table(data_out_of_sample$group))$Freq,
+                                                type_boot = "both",
                                                 n_boot = n_boot,
                                                 seed = 2 * i)
   for (b in 1:n_boot) {
@@ -141,10 +132,6 @@ resEBLUP <- foreach (i = 15:28) %dopar% {
                          data_out_of_sample = data_out_of_sample_boot,
                          params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                           method = "EBLUP",
-                                          tune_RF = FALSE,
-                                          xgboost_params = list(CV_XGB = TRUE,
-                                                                nfolds = 5,
-                                                                nrounds = 50),
                                           type_model = "gaussian"))$tau
 
   # MQ ------------------------------------------------------
@@ -153,10 +140,6 @@ resEBLUP <- foreach (i = 15:28) %dopar% {
                       data_out_of_sample = data_out_of_sample_boot,
                       params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                        method = "MQ",
-                                       tune_RF = FALSE,
-                                       xgboost_params = list(CV_XGB = TRUE,
-                                                             nfolds = 5,
-                                                             nrounds = 50),
                                        type_model = "continuous"))$tau
 
   # RF ----------------------------------------------------------
@@ -165,11 +148,7 @@ resEBLUP <- foreach (i = 15:28) %dopar% {
                      data_out_of_sample = data_out_of_sample_boot,
                      params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                  method = "RF",
-                                 tune_RF = FALSE,
-                                 xgboost_params = list(CV_XGB = TRUE,
-                                                       nfolds = 5,
-                                                       nrounds = 50),
-                                 type_model = "continuous"))$tau
+                                 tune_RF = FALSE))$tau
 
   # XGB --------------------------------------------------------------------
   XGB_boot[b, ] <- hte(type_hte = "OR",
@@ -177,11 +156,9 @@ resEBLUP <- foreach (i = 15:28) %dopar% {
                   data_out_of_sample = data_out_of_sample_boot,
                   params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                    method = "XGB",
-                                   tune_RF = FALSE,
                                    xgboost_params = list(CV_XGB = FALSE,
                                                          nfolds = 5,
-                                                         nrounds = 50),
-                                   type_model = "continuous"))$tau
+                                                         nrounds = 50)))$tau
   }
   # Variance --------------------------------------------------------------------------------------
   EBLUP_OR_var <- colMeans((EBLUP_boot - EBLUP_OR) ^ 2)

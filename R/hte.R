@@ -107,7 +107,7 @@
 #'               params_bootstrap  = list(boot_var = TRUE,
 #'                                        n_boot = 250,
 #'                                        boot_seed = 10,
-#'                                        type_boot = "sample"))
+#'                                        type_boot = "both"))
 #'
 #'
 #'

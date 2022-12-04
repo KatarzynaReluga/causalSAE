@@ -42,7 +42,7 @@ populations <- generate_pop(X, X_outcome,
                             no_sim = 1,
                             seed = 10)
 
-tau_true <- calculate_tau(list(populations), type_tau = "H")
+tau_true <- calculate_tau(list(populations), type_tau = "H")[[1]]
 
 a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 # Simple checks of the code ------------------------------------------------------------------
@@ -51,7 +51,9 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 #  print(i)
   set.seed(a * 2022)
 
-  subpopulation <- sample_subpopulations(populations, frac_nc = 0.05, frac_nt = 0.05)
+  subpopulation <- sample_subpopulations(populations,
+                                         frac_nc = 0.1, frac_nt = 0.1,
+                                         seed = set.seed(a * 2022))
   data_sample <- data.frame(populations[subpopulation, ])
   data_out_of_sample <- populations[-subpopulation, ]
 
@@ -62,12 +64,8 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                 data_sample,
                 data_out_of_sample,
                 params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                                  method = "EBLUP",
-                                  tune_RF = FALSE,
-                                  xgboost_params = list(CV_XGB = TRUE,
-                                                        nfolds = 5,
-                                                        nrounds = 50),
-                                                        type_model = "gaussian"))
+                                 method = "EBLUP",
+                                 type_model = "gaussian"))
   EBLUP_OR <- EBLUP_ORf$tau
 
   # MQ OR
@@ -76,10 +74,6 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                    data_out_of_sample,
                    params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                     method = "MQ",
-                                    tune_RF = FALSE,
-                                    xgboost_params = list(CV_XGB = TRUE,
-                                                          nfolds = 5,
-                                                          nrounds = 50),
                                     type_model = "continuous"))
   MQ_OR <- MQ_ORf$tau
 
@@ -90,11 +84,7 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                 data_out_of_sample,
                 params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                  method = "RF",
-                                 tune_RF = FALSE,
-                                 xgboost_params = list(CV_XGB = TRUE,
-                                                       nfolds = 5,
-                                                       nrounds = 50),
-                                 type_model = "continuous"))
+                                 tune_RF = FALSE))
   RF_OR <- RF_ORf$tau
 
   # EBLUP XGB
@@ -104,18 +94,16 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                 data_out_of_sample,
                 params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                  method = "XGB",
-                                 tune_RF = FALSE,
                                  xgboost_params = list(CV_XGB = FALSE,
                                                        nfolds = 5,
-                                                       nrounds = 50),
-                                 type_model = "continuous"))
+                                                       nrounds = 50)))
   XGB_OR <- XGB_ORf$tau
 
 
   # Bootstrap samples ----------------------------------------------------------------------
-
   bootstrap_indices <- sample_bootstrap_indices(sample_sizes = as.data.frame(table(data_sample$group))$Freq,
                                                 out_of_sample_sizes = as.data.frame(table(data_out_of_sample$group))$Freq,
+                                                type_boot = "both",
                                                 n_boot = n_boot,
                                                 seed = 2 * a)
 
@@ -159,10 +147,6 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                            data_out_of_sample = data_out_of_sample_boot,
                            params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                             method = "EBLUP",
-                                            tune_RF = FALSE,
-                                            xgboost_params = list(CV_XGB = TRUE,
-                                                                  nfolds = 5,
-                                                                  nrounds = 50),
                                             type_model = "gaussian"))$tau
 
     # MQ ------------------------------------------------------
@@ -172,9 +156,6 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                         params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                          method = "MQ",
                                          tune_RF = FALSE,
-                                         xgboost_params = list(CV_XGB = TRUE,
-                                                               nfolds = 5,
-                                                               nrounds = 50),
                                          type_model = "continuous"))$tau
 
     # RF ----------------------------------------------------------
@@ -183,11 +164,7 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                        data_out_of_sample = data_out_of_sample_boot,
                        params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                    method = "RF",
-                                   tune_RF = FALSE,
-                                   xgboost_params = list(CV_XGB = TRUE,
-                                                         nfolds = 5,
-                                                         nrounds = 50),
-                                   type_model = "continuous"))$tau
+                                   tune_RF = FALSE))$tau
 
     # XGB --------------------------------------------------------------------
     XGB_var[i, ] <- hte(type_hte = "OR",
@@ -195,11 +172,9 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                    data_out_of_sample = data_out_of_sample_boot,
                    params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                     method = "XGB",
-                                    tune_RF = FALSE,
                                     xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
-                                                          nrounds = 50),
-                                    type_model = "continuous"))$tau
+                                                          nrounds = 50)))$tau
 
   }
 #  b = Sys.time()
@@ -212,7 +187,9 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   ###########################################################################
   # Store results in the list - standard for baobab.                         #
   ############################################################################
-  Results = list(EBLUP_OR = EBLUP_OR,
+  Results = list(tau_true = tau_true,
+
+                 EBLUP_OR = EBLUP_OR,
                  MQ_OR = MQ_OR,
                  RF_OR = RF_OR,
                  XGB_OR = XGB_OR,

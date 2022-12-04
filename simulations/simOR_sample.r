@@ -42,7 +42,7 @@ populations <- generate_pop(X, X_outcome,
                             no_sim = 1,
                             seed = 10)
 
-tau_true <- calculate_tau(list(populations), type_tau = "H")
+tau_true <- calculate_tau(list(populations), type_tau = "H")[[1]]
 
 a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 # Simple checks of the code ------------------------------------------------------------------
@@ -51,7 +51,9 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 #  print(i)
   set.seed(a * 2022)
 
-  subpopulation <- sample_subpopulations(populations, frac_nc = 0.05, frac_nt = 0.05)
+  subpopulation <- sample_subpopulations(populations,
+                                         frac_nc = 0.1, frac_nt = 0.1,
+                                         seed = set.seed(a * 2022))
   data_sample <- data.frame(populations[subpopulation, ])
   data_out_of_sample <- populations[-subpopulation, ]
 
@@ -62,8 +64,8 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                 data_sample,
                 data_out_of_sample,
                 params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                                  method = "EBLUP",
-                                  type_model = "gaussian"))
+                                 method = "EBLUP",
+                                 type_model = "gaussian"))
   EBLUP_OR <- EBLUP_ORf$tau
 
   # MQ OR
@@ -99,7 +101,6 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 
 
   # Bootstrap samples ----------------------------------------------------------------------
-
   bootstrap_indices <- sample_bootstrap_indices(sample_sizes = as.data.frame(table(data_sample$group))$Freq,
                                                 out_of_sample_sizes = as.data.frame(table(data_out_of_sample$group))$Freq,
                                                 type_boot = "sample",
@@ -154,6 +155,7 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                         data_out_of_sample = data_out_of_sample_boot,
                         params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                          method = "MQ",
+                                         tune_RF = FALSE,
                                          type_model = "continuous"))$tau
 
     # RF ----------------------------------------------------------
@@ -197,7 +199,7 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
                  RF_OR_var = RF_OR_var,
                  XGB_OR_var = XGB_OR_var)
 
-  outputName = paste("sim_OR_", a, ".RData",sep="")
+  outputName = paste("sim_OR_sample", a, ".RData",sep="")
   outputPath = file.path("/home/reluga/Comp", outputName)
   #outputPath=file.path("C:/Users/katar/Documents/Paper_3/sim_P_30u1e1",outputName)
   save("Results", file = outputPath)
