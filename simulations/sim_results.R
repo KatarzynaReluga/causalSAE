@@ -1,7 +1,7 @@
 #setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR")
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE")
 #setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR_boot_correct")
-setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR_sample_boot_correct")
+setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR_boot_correct")
 # Set seed
 set.seed(100)
 

@@ -39,6 +39,7 @@
 #'  \item var_re_out - variance of outlying random effects,
 #'  \item mean_re_out - mean of outlying random effects.
 #' }
+#' @param fct_form Functional form of covariates.
 #' @param regression_type Type of outcomes.
 #' @param Ni_size Vector of subpopulations sizes.
 #' @param m Number of subpopulations.
@@ -105,6 +106,7 @@ generate_pop <- function(X = matrix(),
                                              "binary",
                                              "poisson",
                                              "nb"),
+                         fct_form = c("sin", "exp", "sin-exp", "lin"),
                          Ni_size  = 100,
                          m = 50,
                          no_sim = 100,
@@ -132,6 +134,8 @@ generate_pop <- function(X = matrix(),
   regression_type <- match.arg(regression_type)
   class(regression_type) <- regression_type
 
+  # Define a functional form -------------------------------------
+  fct_form <- match.arg(fct_form)
 
   ## Wrapper function ----------------------------------------------------------
   generate_pop_apply <- function(sim_seed) {
@@ -217,32 +221,32 @@ generate_pop <- function(X = matrix(),
                                coeffs = coeffs,
                                A = A,
                                Ni = Ni, m = m,
+                               fct_form = fct_form,
                                rand_eff_outcome = rand_eff_outcome,
                                seed = seed)
 
     ## Return data frame
-    Xcov <- data.frame(X)
-    names(Xcov) <-  paste0("X", 1:ncol(Xcov))
+    X_cov <- data.frame(X)
+    names(X_cov) <-  paste0("X", 1:ncol(X_cov))
 
     if (!is.null(X_p_score)){
       X_p_score <- data.frame(X_p_score)
       names(X_p_score) <-  paste0("Xp", 1:ncol(X_p_score))
-      X_cov <- data.frame(Xcov, X_p_score)
+      X_cov <- data.frame(X_cov, X_p_score)
     }
 
     if (!is.null(X_outcome)){
       X_outcome <- data.frame(X_outcome)
       names(X_outcome) <-  paste0("Xo", 1:ncol(X_outcome))
-      X_cov <- data.frame(Xcov, X_outcome)
+      X_cov <- data.frame(X_cov, X_outcome)
     }
 
-
-
     population <- data.frame(X_cov, A, group, p_score,
-                             y = gen_outcome)
+                             y = gen_outcome$y,
+                             y1 = gen_outcome$y1,
+                             y0 = gen_outcome$y0)
     return(population)
   }
-
 
   ## Generate no_sim populations
 
@@ -290,7 +294,7 @@ gen_outcome.continuous <- function(regression_obj,
                                    errors_outcome,
                                    coeffs,
                                    A,
-                                   Ni, m,
+                                   Ni, m, fct_form,
                                    rand_eff_outcome,
                                    seed = 1,
                                    ...) {
@@ -329,9 +333,28 @@ gen_outcome.continuous <- function(regression_obj,
   coef_A_repeat <- rep(coef_A, times = Ni)
 
   ## Generate outcome with different area specific effect
-  y = coeffs$intercept_outcome + Xreg_outcome + coef_A * A + re_repeat + e
 
-  return(y)
+  # define function class --------------------------------------------------
+  fct_obj <- list(intercept = coeffs$intercept_outcome,
+                  Xreg_outcome = Xreg_outcome)
+
+  class(fct_obj) <- fct_form
+  fx <- fct_form(fct_obj)
+
+  y = fx + coef_A_repeat * A + re_repeat + e
+  y1 = fx + coef_A_repeat * 1 + re_repeat + e
+  y0 = fx + coef_A_repeat * 0 + re_repeat + e
+
+
+#  y = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat + e
+#  y1 = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat + e
+#  y0 = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat + e
+
+  output <- list(y = y,
+                 y1 = y1,
+                 y0 = y0)
+
+  return(output)
 
 }
 
@@ -347,6 +370,7 @@ gen_outcome.binary <- function(regression_obj,
                                Ni, m,
                                rand_eff_outcome,
                                seed = 1,
+                               fct_form,
                                ...) {
   set.seed(seed)
 
@@ -371,9 +395,19 @@ gen_outcome.binary <- function(regression_obj,
   coef_A_repeat <- rep(coef_A, times = Ni)
 
   ## Generate outcomes
-  exp_outcome = exp(
-    coeffs$intercept_outcome + Xreg_outcome + coef_A * A + re_repeat
-  )
+  # define function class --------------------------------------------------
+  fct_obj <- list(intercept = coeffs$intercept_outcome,
+                  Xreg_outcome = Xreg_outcome)
+
+  class(fct_obj) <- fct_form
+  fx <- fct_form(fct_obj)
+  #y --------------------------------
+#  exp_outcome = exp(
+#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat
+#  )
+    exp_outcome = exp(
+      fx + coef_A_repeat * A + re_repeat
+    )
   p_outcome = exp_outcome * (1 + exp_outcome) ^ (-1)
   y  <- generate_binary(
     n = length(Xreg_outcome),
@@ -382,9 +416,45 @@ gen_outcome.binary <- function(regression_obj,
     frac_out = errors_outcome$frac_out,
     seed = seed
   )
+  #y1 ------------------------------------------
+  exp_outcome1 = exp(
+    fx + coef_A_repeat * 1 + re_repeat
+  )
 
+#  exp_outcome1 = exp(
+#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat
+#  )
+  p_outcome1 = exp_outcome1 * (1 + exp_outcome1) ^ (-1)
+  y1  <- generate_binary(
+    n = length(Xreg_outcome),
+    p = p_outcome1,
+    disturbance = errors_outcome$disturbance_outcome,
+    frac_out = errors_outcome$frac_out,
+    seed = seed
+  )
+  #y0 ------------------------------------------
+  #  exp_outcome0 = exp(
+  #    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat
+  #  )
+  exp_outcome0 = exp(
+    fx + coef_A_repeat * 0 + re_repeat
+  )
 
-  return(y)
+  p_outcome0 = exp_outcome0 * (1 + exp_outcome0) ^ (-1)
+  y0  <- generate_binary(
+    n = length(Xreg_outcome),
+    p = p_outcome0,
+    disturbance = errors_outcome$disturbance_outcome,
+    frac_out = errors_outcome$frac_out,
+    seed = seed
+  )
+
+  output <- list(y = y,
+                 y1 = y1,
+                 y0 = y0)
+
+  return(output)
+#  return(y)
 
 }
 
@@ -424,9 +494,21 @@ gen_outcome.poisson <- function(regression_obj,
   coef_A_repeat <- rep(coef_A, times = Ni)
 
   ## Generate outcomes
+  fct_obj <- list(intercept = coeffs$intercept_outcome,
+                  Xreg_outcome = Xreg_outcome)
+
+  class(fct_obj) <- fct_form
+  fx <- fct_form(fct_obj)
+
+  #y -------------------------
+#  exp_outcome = exp(
+#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat
+#  )
+
   exp_outcome = exp(
-    coeffs$intercept_outcome + Xreg_outcome + coef_A * A + re_repeat
+    fx + coef_A_repeat * A + re_repeat
   )
+
 
   y <- generate_poisson(
     n = length(Xreg_outcome),
@@ -436,9 +518,116 @@ gen_outcome.poisson <- function(regression_obj,
     seed = seed
   )
 
-  return(y)
+  #y1 ---------------------
+#  exp_outcome1 = exp(
+#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat
+#  )
+  exp_outcome1 = exp(
+    fx + coef_A_repeat * 1 + re_repeat
+  )
+
+  y1 <- generate_poisson(
+    n = length(Xreg_outcome),
+    mu = exp_outcome1,
+    disturbance = errors_outcome$disturbance_outcome,
+    frac_out = errors_outcome$frac_out,
+    seed = seed
+  )
+
+  #y0 ---------------------------
+#  exp_outcome0 = exp(
+#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat
+#  )
+  exp_outcome0 = exp(
+    fx + coef_A_repeat * 0 + re_repeat
+  )
+
+  y0 <- generate_poisson(
+    n = length(Xreg_outcome),
+    mu = exp_outcome0,
+    disturbance = errors_outcome$disturbance_outcome,
+    frac_out = errors_outcome$frac_out,
+    seed = seed
+  )
+
+  output <- list(y = y,
+                 y1 = y1,
+                 y0 = y0)
+
+  return(output)
 
 }
+
+#' Generate one population
+#'
+#' This is a generic function to generate outcome variables
+#'
+#' @param fct_obj Function form object
+#' @param ... Additional parameters
+#'
+#' @return A data vector
+#'
+#' @export
+#'
+
+fct_form <- function(...)
+  UseMethod("fct_form")
+
+#'
+#' @describeIn fct_form Sine functional form
+#' @export
+#'
+
+fct_form.sin <- function(fct_obj, ...) {
+
+  intercept <- fct_obj$intercept
+  Xreg_outcome <- fct_obj$Xreg_outcome
+
+  fx <- sin(intercept + Xreg_outcome)
+
+  return(fx)
+}
+
+#'
+#' @describeIn fct_form Sine functional form
+#' @export
+#'
+
+fct_form.exp <- function(fct_obj, ...) {
+
+  intercept <- fct_obj$intercept
+  Xreg_outcome <- fct_obj$Xreg_outcome
+
+  fx <- exp(intercept + Xreg_outcome)
+
+  return(fx)
+}
+
+#'
+#' @describeIn fct_form Sine functional form
+#' @export
+#'
+
+fct_form.sin_exp <- function(fct_obj, ...) {
+
+  intercept <- fct_obj$intercept
+  Xreg_outcome <- fct_obj$Xreg_outcome
+
+  fx <- sin(exp(intercept + Xreg_outcome))
+
+  return(fx)
+}
+
+fct_form.lin <- function(fct_obj, ...) {
+
+  intercept <- fct_obj$intercept
+  Xreg_outcome <- fct_obj$Xreg_outcome
+
+  fx <- intercept + Xreg_outcome
+
+  return(fx)
+}
+
 # coeffs
 check_coeffs <- function(coeffs) {
 
