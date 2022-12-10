@@ -42,7 +42,15 @@ populations <- generate_pop(X, X_outcome,
                             no_sim = 1,
                             seed = 10)
 
-tau_true <- calculate_tau(list(populations), type_tau = "H")[[1]]
+#tau_true <- calculate_tau(list(populations), type_tau = "H")[[1]]
+
+y1 <- populations$y1
+y0 <- populations$y0
+group <- populations$group
+tau_treat <- aggregate(y1, list(group), FUN = mean)$x
+tau_untreat <- aggregate(y0, list(group), FUN = mean)$x
+tau_true = tau_treat - tau_untreat
+
 
 a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 # Simple checks of the code ------------------------------------------------------------------
@@ -188,6 +196,8 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   # Store results in the list - standard for baobab.                         #
   ############################################################################
   Results = list(tau_true = tau_true,
+                 tau_treat = tau_treat,
+                 tau_untreat = tau_untreat,
 
                  EBLUP_OR = EBLUP_OR,
                  MQ_OR = MQ_OR,

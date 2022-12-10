@@ -1,7 +1,9 @@
 #setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR")
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE")
 #setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR_boot_correct")
-setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR_boot_correct")
+#setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR_boot_correct")
+setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results_test/sample")
+
 # Set seed
 set.seed(100)
 
@@ -128,7 +130,7 @@ MSE <- function(estimator, true_value) {
 }
 
 # Retrive vectors ------------------------------------------------------
-SimNum = 200
+SimNum = 100
 D = 50
 
 tau_trueM <- matrix(0, nrow = SimNum, ncol = D)
@@ -159,7 +161,7 @@ for (i in 1:SimNum) {
 
   load(file_list[i])
 
-  tau_trueM[i, ] <- Results$tau_true[[1]]$tau
+  tau_trueM[i, ] <- Results$tau_true
 
   tauEBLUP[i, ] <- Results$EBLUP_OR
   tauMQ[i, ] <- Results$MQ_OR
@@ -171,7 +173,7 @@ for (i in 1:SimNum) {
   tauRF_var[i, ] <- Results$RF_OR_var
   tauXGB_var[i, ] <- Results$XGB_OR_var
 
-  tau_true <- Results$tau_true[[1]]$tau
+  tau_true <- Results$tau_true
 
   TestE[i, ] <- ((Results$EBLUP_OR - 1.96 * sqrt(Results$EBLUP_OR_var)) <= tau_true) & (tau_true <= (1.96 * sqrt(Results$EBLUP_OR_var) + Results$EBLUP_OR))
   TestM[i, ] <- ((Results$MQ_OR - 1.96 * sqrt(Results$MQ_OR_var)) <= tau_true) & (tau_true <= (1.96 * sqrt(Results$MQ_OR_var) + Results$MQ_OR))

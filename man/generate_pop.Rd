@@ -13,7 +13,7 @@ generate_pop(
   rand_eff_outcome = get_default_rand_eff_outcome(),
   rand_eff_p_score = get_default_rand_eff_p_score(),
   regression_type = c("continuous", "binary", "poisson", "nb"),
-  fct_form = c("sin", "exp", "sin-exp", "lin"),
+  fct_coef = c("sin", "exp", "sin_exp", "lin"),
   Ni_size = 100,
   m = 50,
   no_sim = 100,
@@ -67,7 +67,7 @@ generate_pop(
 
 \item{regression_type}{Type of outcomes.}
 
-\item{fct_form}{Functional form of covariates.}
+\item{fct_coef}{Functional form of covariates.}
 
 \item{Ni_size}{Vector of subpopulations sizes.}
 
@@ -118,7 +118,8 @@ rand_eff_p_score = get_default_rand_eff_p_score(),
 regression_type = "continuous",
 Ni_size  = 100,
 m = 50,
-no_sim = 100,
+fct_coef = "sin-exp",
+no_sim = 1,
 seed = 1)
 
 }

@@ -17,7 +17,7 @@ gen_outcome(...)
   A,
   Ni,
   m,
-  fct_form,
+  fct_coef,
   rand_eff_outcome,
   seed = 1,
   ...
@@ -33,7 +33,7 @@ gen_outcome(...)
   m,
   rand_eff_outcome,
   seed = 1,
-  fct_form,
+  fct_coef,
   ...
 )
 
@@ -46,6 +46,7 @@ gen_outcome(...)
   Ni,
   m,
   rand_eff_outcome,
+  fct_coef,
   seed = 1,
   ...
 )
@@ -83,7 +84,7 @@ gen_outcome(...)
 
 \item{m}{Number of subpopulations.}
 
-\item{fct_form}{Functional form of covariates.}
+\item{fct_coef}{Functional form of covariates.}
 
 \item{rand_eff_outcome}{List of parameters to generate random effects for outcome model, that is:
 \itemize{

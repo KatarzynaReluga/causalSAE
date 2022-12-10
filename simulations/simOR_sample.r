@@ -195,6 +195,8 @@ a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
   # Store results in the list - standard for baobab.                         #
   ############################################################################
   Results = list(tau_true = tau_true,
+                 tau_treat = tau_treat,
+                 tau_untreat = tau_untreat,
 
                  EBLUP_OR = EBLUP_OR,
                  MQ_OR = MQ_OR,

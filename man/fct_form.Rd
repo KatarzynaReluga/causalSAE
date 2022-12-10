@@ -5,6 +5,7 @@
 \alias{fct_form.sin}
 \alias{fct_form.exp}
 \alias{fct_form.sin_exp}
+\alias{fct_form.lin}
 \title{Generate one population}
 \usage{
 fct_form(...)
@@ -14,6 +15,8 @@ fct_form(...)
 \method{fct_form}{exp}(fct_obj, ...)
 
 \method{fct_form}{sin_exp}(fct_obj, ...)
+
+\method{fct_form}{lin}(fct_obj, ...)
 }
 \arguments{
 \item{...}{Additional parameters}
@@ -32,6 +35,8 @@ This is a generic function to generate outcome variables
 
 \item \code{exp}: Sine functional form
 
-\item \code{sin_exp}: Sine functional form
+\item \code{sin_exp}: Sine(exp) functional form
+
+\item \code{lin}: Linear functional form
 }}
 

@@ -39,7 +39,7 @@
 #'  \item var_re_out - variance of outlying random effects,
 #'  \item mean_re_out - mean of outlying random effects.
 #' }
-#' @param fct_form Functional form of covariates.
+#' @param fct_coef Functional form of covariates.
 #' @param regression_type Type of outcomes.
 #' @param Ni_size Vector of subpopulations sizes.
 #' @param m Number of subpopulations.
@@ -86,7 +86,8 @@
 #' regression_type = "continuous",
 #' Ni_size  = 100,
 #' m = 50,
-#' no_sim = 100,
+#' fct_coef = "sin-exp",
+#' no_sim = 1,
 #' seed = 1)
 #'
 
@@ -106,7 +107,7 @@ generate_pop <- function(X = matrix(),
                                              "binary",
                                              "poisson",
                                              "nb"),
-                         fct_form = c("sin", "exp", "sin-exp", "lin"),
+                         fct_coef = c("sin", "exp", "sin_exp", "lin"),
                          Ni_size  = 100,
                          m = 50,
                          no_sim = 100,
@@ -135,7 +136,7 @@ generate_pop <- function(X = matrix(),
   class(regression_type) <- regression_type
 
   # Define a functional form -------------------------------------
-  fct_form <- match.arg(fct_form)
+  fct_coef <- match.arg(fct_coef)
 
   ## Wrapper function ----------------------------------------------------------
   generate_pop_apply <- function(sim_seed) {
@@ -221,7 +222,7 @@ generate_pop <- function(X = matrix(),
                                coeffs = coeffs,
                                A = A,
                                Ni = Ni, m = m,
-                               fct_form = fct_form,
+                               fct_coef = fct_coef,
                                rand_eff_outcome = rand_eff_outcome,
                                seed = seed)
 
@@ -293,8 +294,7 @@ gen_outcome.continuous <- function(regression_obj,
                                    Xreg_outcome,
                                    errors_outcome,
                                    coeffs,
-                                   A,
-                                   Ni, m, fct_form,
+                                   A, Ni, m, fct_coef,
                                    rand_eff_outcome,
                                    seed = 1,
                                    ...) {
@@ -338,7 +338,7 @@ gen_outcome.continuous <- function(regression_obj,
   fct_obj <- list(intercept = coeffs$intercept_outcome,
                   Xreg_outcome = Xreg_outcome)
 
-  class(fct_obj) <- fct_form
+  class(fct_obj) <- fct_coef
   fx <- fct_form(fct_obj)
 
   y = fx + coef_A_repeat * A + re_repeat + e
@@ -370,7 +370,7 @@ gen_outcome.binary <- function(regression_obj,
                                Ni, m,
                                rand_eff_outcome,
                                seed = 1,
-                               fct_form,
+                               fct_coef,
                                ...) {
   set.seed(seed)
 
@@ -399,7 +399,7 @@ gen_outcome.binary <- function(regression_obj,
   fct_obj <- list(intercept = coeffs$intercept_outcome,
                   Xreg_outcome = Xreg_outcome)
 
-  class(fct_obj) <- fct_form
+  class(fct_obj) <- fct_coef
   fx <- fct_form(fct_obj)
   #y --------------------------------
 #  exp_outcome = exp(
@@ -469,6 +469,7 @@ gen_outcome.poisson <- function(regression_obj,
                                 A,
                                 Ni, m,
                                 rand_eff_outcome,
+                                fct_coef,
                                 seed = 1,
                                 ...) {
   set.seed(seed)
@@ -497,7 +498,7 @@ gen_outcome.poisson <- function(regression_obj,
   fct_obj <- list(intercept = coeffs$intercept_outcome,
                   Xreg_outcome = Xreg_outcome)
 
-  class(fct_obj) <- fct_form
+  class(fct_obj) <- fct_coef
   fx <- fct_form(fct_obj)
 
   #y -------------------------
@@ -604,7 +605,7 @@ fct_form.exp <- function(fct_obj, ...) {
 }
 
 #'
-#' @describeIn fct_form Sine functional form
+#' @describeIn fct_form Sine(exp) functional form
 #' @export
 #'
 
@@ -617,6 +618,11 @@ fct_form.sin_exp <- function(fct_obj, ...) {
 
   return(fx)
 }
+
+#'
+#' @describeIn fct_form Linear functional form
+#' @export
+#'
 
 fct_form.lin <- function(fct_obj, ...) {
 
