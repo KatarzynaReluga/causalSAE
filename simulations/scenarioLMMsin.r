@@ -82,6 +82,7 @@ populations <- generate_pop(X = X,
                             no_sim = 1,
                             fct_coef = "sin",
                             seed = 1)
+#head(populations)
 # Retrieve y and groups -------------------------------------------
 y1 <- populations$y1
 y0 <- populations$y0

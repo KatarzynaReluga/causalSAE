@@ -1,5 +1,5 @@
 #
-# LMM with errors --------------------------------------
+# LMM with sinexp --------------------------------------
 # No random effects
 #
 
@@ -80,7 +80,7 @@ populations <- generate_pop(X = X,
                             Ni_size  = 200,
                             m = 50,
                             no_sim = 1,
-                            fct_coef = "lin",
+                            fct_coef = "sin_exp",
                             seed = 1)
 #head(populations)
 # Retrieve y and groups -------------------------------------------
