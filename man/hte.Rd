@@ -18,6 +18,7 @@ hte(
     50), type_model = "gaussian"),
   params_bootstrap = list(boot_var = FALSE, n_boot = 500, boot_seed = 10, type_boot =
     "both"),
+  estimated_p_score = NULL,
   ...
 )
 }
@@ -70,6 +71,8 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item n_boot = 500,
 \item boot_seed = 10,
 }}
+
+\item{estimated_p_score}{Vector of estimated propensity scores, default: \code{estimated_p_score = NULL}.}
 
 \item{...}{Additional parameters}
 }

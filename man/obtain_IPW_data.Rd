@@ -4,7 +4,7 @@
 \alias{obtain_IPW_data}
 \title{Obtain IPW data}
 \usage{
-obtain_IPW_data(obj_hte, params_p_score, params_impute_y)
+obtain_IPW_data(obj_hte, params_p_score, params_impute_y, estimated_p_score)
 }
 \arguments{
 \item{obj_hte}{Object to estimate hte}
@@ -31,6 +31,8 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
 \item type_model - type of outcome.
 }}
+
+\item{estimated_p_score}{Vector of estimated propensity scores, default: \code{estimated_p_score = NULL}.}
 }
 \value{
 Estimates of propensity score.

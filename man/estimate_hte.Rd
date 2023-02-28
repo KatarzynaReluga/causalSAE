@@ -12,11 +12,18 @@ estimate_hte(...)
 
 \method{estimate_hte}{OR}(obj_hte, params_OR, ...)
 
-\method{estimate_hte}{IPW}(obj_hte, params_p_score, params_impute_y, ...)
+\method{estimate_hte}{IPW}(obj_hte, params_p_score, params_impute_y, estimated_p_score, ...)
 
-\method{estimate_hte}{NIPW}(obj_hte, params_p_score, params_impute_y, ...)
+\method{estimate_hte}{NIPW}(obj_hte, params_p_score, params_impute_y, estimated_p_score, ...)
 
-\method{estimate_hte}{AIPW}(obj_hte, params_p_score, params_impute_y, params_OR, ...)
+\method{estimate_hte}{AIPW}(
+  obj_hte,
+  params_p_score,
+  params_impute_y,
+  params_OR,
+  estimated_p_score,
+  ...
+)
 }
 \arguments{
 \item{...}{Additional parameters}
@@ -57,6 +64,8 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
 \item type_model - type of outcome.
 }}
+
+\item{estimated_p_score}{Vector of estimated propensity scores, default: \code{estimated_p_score = NULL}.}
 }
 \value{
 List with following parameters:

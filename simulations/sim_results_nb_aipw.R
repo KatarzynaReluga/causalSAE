@@ -1,5 +1,5 @@
-#setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/OR")
-setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results")
+setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/first_simulations_testing/sim_nb_AIPW")
+#setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results")
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE")
 
 

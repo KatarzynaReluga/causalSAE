@@ -8,4 +8,4 @@
 
 module load foss/2019a R/3.6.0
 
-srun R CMD BATCH scenarioLMM.r
+srun R CMD BATCH scenarioLMMerrors.r

@@ -118,7 +118,7 @@ rand_eff_p_score = get_default_rand_eff_p_score(),
 regression_type = "continuous",
 Ni_size  = 100,
 m = 50,
-fct_coef = "sin-exp",
+fct_coef = "sin_exp",
 no_sim = 1,
 seed = 1)
 

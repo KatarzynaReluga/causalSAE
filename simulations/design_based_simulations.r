@@ -1,125 +1,198 @@
 # rm(list=ls())
 # .rs.restartR()
 #
-# LMM --------------------------------------
-# No random effects
-#
+
+library(dplyr)
+library(sampling)
+library(xtable)
+library(ggplot2)
+library(grid)
+library(gtable)
+library(skewt)
 
 setwd("./causalSAE")
 devtools::load_all()
 
-m = 50
-ni = rep(10, m)
-Ni = rep(200, m)
-N = sum(Ni)
-n = sum(ni)
+# Read and pre_process data
+data_survey <- read.csv2("./simulations/data_filtered_survey.csv")
+data_survey_inc <- data_survey[, -c(17)]
+data_survey_inc <- data_survey_inc %>% filter(eq_house_disp_inc > 0)
+y = log(data_survey_inc$eq_house_disp_inc)
+data_survey_inc$y <- y
 
-# Exp works but it needs to have small coef
+# Standardize continuous variables
+data_survey_inc$age <- scale(data_survey_inc$age,
+                             center = T, scale = T)
 
-X_unif <- generate_X(
-  n = N,
-  p = 5,
-  covariance_norm = NULL,
-  cov_type = "unif",
-  seed = 3
-)
+data_survey_inc$house_size <- scale(data_survey_inc$house_size,
+                                    center = T, scale = T)
 
-var_norm <- matrix(c(1, 0.3, 0.3, 0.3, 0.3,
-                     0.3, 1, 0.3, 0.3, 0.3,
-                     0.3, 0.3, 1, 0.3, 0.3,
-                     0.3, 0.3, 0.3, 1, 0.3,
-                     0.3, 0.3, 0.3, 0.3, 1), nrow = 5, ncol = 5, byrow = T)
+data_pop <- data_survey_inc %>%
+  rename(A  = type_contract,
+         group  = province) %>%
+  select(-eq_house_disp_inc)
+plot(density(data_pop$y))
 
-X_norm <- generate_X(
-  n = N,
-  p = 5,
-  covariance_norm = var_norm,
-  cov_type = "norm",
-  seed = 3
-)
+####################################################################################
+# Estimate propensity score
+####################################################################################
+#formula_p_score = A ~ X1 + (1|group)
+formula_p_score = A ~ sex + nationality + age + house_size + married +
+  separated + widowed + divorced  + edu1 + edu2 + edu3 + (1|group)
 
-X_norms = cbind(sort(X_norm[, 1]), sort(X_norm[, 2]),
-                sort(X_norm[, 3]), sort(X_norm[, 4]),
-                sort(X_norm[, 5]))
+# EBLUP
 
-X = cbind(X_unif, X_norm)
-Xs = cbind(X_unifs, X_norms)
-#sumX <- (Xs[, 1] + Xs[, 2] + Xs[, 3] + Xs[, 4] + Xs[, 5] +
-#           Xs[, 6] + Xs[, 7] + Xs[, 8] + Xs[, 9] + Xs[, 10])
+obj_p_score_EBLUP <- list(data_p_score = data_pop)
+class(obj_p_score_EBLUP) <- "EBLUP"
 
-plot(1:10000, sin(10*sort(X_norm[, 5])))
-plot(1:10000, sin(5 * sumX))
+ps_hat_EBLUP <-  p_score(obj_p_score = obj_p_score_EBLUP,
+                         model_formula = formula_p_score)
 
-coeffs = list(intercept_outcome = 100,
-              intercept_p_score = - 0.3,
+# MQ
 
-              coef_outcome = rep(c(1, 2), 5),
-              coef_p_score = rep(0.5, 10),
+obj_p_score_MQ <- list(data_p_score = data_pop)
+class(obj_p_score_MQ) <- "MQ"
 
-              mean_A = 10,
-              var_A = 1)
+ps_hat_MQ <-  p_score(obj_p_score = obj_p_score_MQ,
+                      model_formula = formula_p_score)
 
+# RF
+
+obj_p_score_RF <- list(data_p_score = data_pop)
+class(obj_p_score_RF) <- "RF"
+
+ps_hat_RF <-  p_score(obj_p_score = obj_p_score_RF,
+                      model_formula = formula_p_score,
+                      tune_RF = FALSE)
+
+# XGB
+
+obj_p_score_XGB <- list(data_p_score = data_pop)
+class(obj_p_score_XGB) <- "XGB"
+
+ps_hat_XGB <-  p_score(obj_p_score = obj_p_score_XGB,
+                       model_formula = formula_p_score,
+                       xgboost_params = list(CV_XGB = FALSE,
+                                             nfolds = 5,
+                                             nrounds = 50))
+
+# RF tune
+
+#obj_p_score_RF <- list(data_p_score = data_pop)
+#class(obj_p_score_RF) <- "RF"
+
+ps_hat_RFt <-  p_score(obj_p_score = obj_p_score_RF,
+                      model_formula = formula_p_score,
+                      tune_RF = TRUE)
+
+# XGB tune
+
+#obj_p_score_XGB <- list(data_p_score = data_pop)
+#class(obj_p_score_XGB) <- "XGB"
+
+ps_hat_XGBt <- p_score(obj_p_score = obj_p_score_XGB,
+                      model_formula = formula_p_score,
+                      xgboost_params = list(CV_XGB = TRUE,
+                                             nfolds = 5,
+                                             nrounds = 50))
+
+# Some checks
+# EBLUP data
+data_pop_EB <- data_pop
+data_pop_EB$p_score <- ps_hat_EBLUP
+ps_hat_EBLUP_sort <- sort(ps_hat_EBLUP, index.return = T)
+
+#MQ data
+data_pop_MQ <- data_pop
+data_pop_MQ$p_score <- ps_hat_MQ
+ps_hat_MQ_sort <- sort(ps_hat_MQ, index.return = T)
+
+#RF data
+data_pop_RF <- data_pop
+data_pop_RF$p_score <- ps_hat_RF
+ps_hat_RF_sort <- sort(unlist(ps_hat_RF), index.return = T)
+
+#XGBoost data
+data_pop_XGB <- data_pop
+data_pop_XGB$p_score <- ps_hat_XGB
+ps_hat_XGB_sort <- sort(unlist(ps_hat_XGB), index.return = T)
+
+#RF tune data
+data_pop_RFt <- data_pop
+data_pop_RFt$p_score <- ps_hat_RFt
+ps_hat_RFt_sort <- sort(unlist(ps_hat_RFt), index.return = T)
+
+#XGBoost tune data
+data_pop_XGBt <- data_pop
+data_pop_XGBt$p_score <- ps_hat_XGBt
+ps_hat_XGBt_sort <- sort(unlist(ps_hat_XGBt), index.return = T)
+
+
+# Compute tau true
+tau_EB <- calculate_tau(list(data_pop_EB), type_tau = "H")
+tau_MQ <- calculate_tau(list(data_pop_MQ), type_tau = "H")
+tau_RF <- calculate_tau(list(data_pop_RF), type_tau = "H")
+tau_XGB <- calculate_tau(list(data_pop_XGB), type_tau = "H")
+tau_RFt <- calculate_tau(list(data_pop_RFt), type_tau = "H")
+tau_XGBt <- calculate_tau(list(data_pop_XGBt), type_tau = "H")
+
+
+# Load provinces
+source("./simulations/Province.R")
+
+plot(1:41, tau_EB[[1]]$tau, col = 1, main = "Heterogeneous treatment effect",
+     type = "l", ylab  = expression(tau), xlab = "Province",
+     lwd = 2)
+lines(tau_MQ[[1]]$tau, col = 3, lwd = 2)
+lines(tau_RF[[1]]$tau, col = 2, lwd = 2)
+lines(tau_XGB[[1]]$tau, col = 4, lwd = 2)
+lines(tau_RFt[[1]]$tau, col = 5, lwd = 2)
+lines(tau_XGBt[[1]]$tau, col = 6, lwd = 2)
+legend(28, 1.5, legend=c("EBLUP", "RF"), col = 1:2, lwd = 2, cex=0.8)
+
+df <- data.frame(effect = c(tau_EB[[1]]$tau, tau_RF[[1]]$tau),
+                 method = c(rep("EBLUP", 41), rep("RF", 41)),
+                 province = c(Province, Province))
+
+################################################
+## Formulas
+###################################################################
+# Drop: single, edu0
 #
-errors_outcome <- list(var_e = 1,
-                       mean_e = 0,
+#formula_y = y ~ sex + nationality + age + house_size  + married +
+#  separated + widowed + divorced  + edu1 + edu2 + edu3 + A + (1 + A||group)
 
-                       frac_out = 0,
-                       var_e_out = 0,
+formula_y_OR = y ~ sex + nationality + age + house_size  + married +
+  separated + widowed + divorced  + edu1 + edu2 + edu3 + (1|group)
 
-                       mean_e_out = 0,
-                       disturbance_outcome = 5)
+formula_y_impute = y ~ sex + nationality + age + house_size  + married +
+  separated + widowed + divorced  + edu1 + edu2 + edu3 + (1 + A||group)
 
-re_outcome <- list(var_re = 3,
-                   mean_re = 0,
+formula_p_score = A ~ sex + nationality + age + house_size + married +
+  separated + widowed + divorced  + edu1 + edu2 + edu3 + (1|group)
 
-                   frac_out = 0,
-                   var_re_out = 0,
+####################################################################################
+## Design based simulations
+####################################################################################
 
-                   mean_re_out = 0)
+Ni = as.numeric(table(data_pop$group))
+Nc = as.numeric(table(data_pop$group[data_pop$A == 0]))
+Nt = as.numeric(table(data_pop$group[data_pop$A == 1]))
 
-re_p_score <- list(var_re = 0.25,
-                   mean_re = 0,
+N = sum(Ni)
+m = length(unique(data_pop$group))
 
-                   frac_out = 0,
-                   var_re_out = 0,
-
-                   mean_re_out = 0)
-
-populations <- generate_pop(X = X,
-                            coeffs = coeffs,
-                            errors_outcome = errors_outcome,
-                            rand_eff_outcome = re_outcome,
-                            rand_eff_p_score = re_p_score,
-                            regression_type = "continuous",
-                            Ni_size  = 200,
-                            m = 50,
-                            no_sim = 1,
-                            fct_coef = "lin",
-                            seed = 1)
-plot(1:10000, populations$y)
-#head(populations)
-# Retrieve y and groups -------------------------------------------
-y1 <- populations$y1
-y0 <- populations$y0
-group <- populations$group
-# Compute true tau -------------------------------------------
-tau_treat <- aggregate(y1, list(group), FUN = mean)$x
-tau_untreat <- aggregate(y0, list(group), FUN = mean)$x
-tau_true = tau_treat - tau_untreat
-
-#a = 4
 a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-# Simple checks of the code ------------------------------------------------------------------
-#for (i in 1:NoSim) {
-#a  = Sys.time()
-#  print(i)
 set.seed(a * 2022)
+# Here remember to change sth not to repeat that in simulations
 
-subpopulation <- sample_subpopulations(populations,
+data_pop <- data_pop_EB
+subpopulation <- sample_subpopulations(data_pop,
                                        frac_nc = 0.1, frac_nt = 0.1,
                                        seed = set.seed(a * 2022))
-data_sample <- data.frame(populations[subpopulation, ])
-data_out_of_sample <- populations[-subpopulation, ]
+data_sample <- data.frame(data_pop[subpopulation, ])
+data_out_of_sample <- data_pop[-subpopulation, ]
+
 #######################################################################################################
 ######
 # OR #
@@ -127,43 +200,44 @@ data_out_of_sample <- populations[-subpopulation, ]
 #######################################################################################################
 # EBLUP OR ----------------------------------------------------------------------------------------------
 E_ORf <- hte(type_hte = "OR",
-                 data_sample,
-                 data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
-                                  method = "EBLUP",
-                                  type_model = "gaussian"))
+             data_sample,
+             data_out_of_sample,
+             params_OR = list(model_formula = formula_y_OR,
+                              method = "EBLUP",
+                              type_model = "gaussian"))
 E_OR <- E_ORf$tau
 
 # MQ OR --------------------------------------------------------------------------------------------------------
 M_ORf <- hte(type_hte = "OR",
-              data_sample,
-              data_out_of_sample,
-              params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
-                               method = "MQ",
-                               type_model = "continuous"))
+             data_sample,
+             data_out_of_sample,
+             params_OR = list(model_formula = formula_y_OR,
+                              method = "MQ",
+                              type_model = "continuous"))
 M_OR <- M_ORf$tau
 
 # RF OR ------------------------------------------------------------------------------------------------------------
 
 R_ORf <- hte(type_hte = "OR",
-              data_sample,
-              data_out_of_sample,
-              params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
-                               method = "RF",
-                               tune_RF = FALSE))
+             data_sample,
+             data_out_of_sample,
+             params_OR = list(model_formula = formula_y_OR,
+                              method = "RF",
+                              tune_RF = FALSE))
 R_OR <- R_ORf$tau
 
 # EBLUP XGB -----------------------------------------------------------------------------------------------------------
 
 X_ORf <- hte(type_hte = "OR",
-               data_sample,
-               data_out_of_sample,
-               params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
-                                method = "XGB",
-                                xgboost_params = list(CV_XGB = FALSE,
-                                                      nfolds = 5,
-                                                      nrounds = 50)))
+             data_sample,
+             data_out_of_sample,
+             params_OR = list(model_formula = formula_y_OR,
+                              method = "XGB",
+                              xgboost_params = list(CV_XGB = FALSE,
+                                                    nfolds = 5,
+                                                    nrounds = 50)))
 X_OR <- X_ORf$tau
+
 ##############################################################################################################
 ########
 # NIPW #
@@ -174,11 +248,12 @@ X_OR <- X_ORf$tau
 EE_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =   A ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "EBLUP"),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "EBLUP",
-                                       type_model = "gaussian"))
+                                       type_model = "gaussian"),
+                estimated_p_score = c(data_sample$p_score, data_out_of_sample$p_score))
 
 EE_NIPW <- EE_NIPWf$tau
 
@@ -186,9 +261,9 @@ EE_NIPW <- EE_NIPWf$tau
 EM_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =   A ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "EBLUP"),
-                params_impute_y = list(model_formula = y ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "MQ",
                                        type_model = "continuous"))
 
@@ -198,9 +273,9 @@ EM_NIPW <- EM_NIPWf$tau
 ER_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =  A ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "EBLUP"),
-                params_impute_y = list(model_formula =  y ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "RF",
                                        tune_RF = FALSE))
 
@@ -210,9 +285,9 @@ ER_NIPW <- ER_NIPWf$tau
 EX_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "EBLUP"),
-                params_impute_y = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
@@ -225,9 +300,9 @@ EX_NIPW <- EX_NIPWf$tau
 MM_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "MQ"),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "MQ",
                                        type_model = "continuous"))
 MM_NIPW <- MM_NIPWf$tau
@@ -237,9 +312,9 @@ MM_NIPW <- MM_NIPWf$tau
 ME_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "MQ"),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "EBLUP",
                                        type_model = "gaussian"))
 ME_NIPW <- ME_NIPWf$tau
@@ -249,9 +324,9 @@ ME_NIPW <- ME_NIPWf$tau
 MR_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "MQ"),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "RF",
                                        tune_RF = FALSE))
 MR_NIPW <- MR_NIPWf$tau
@@ -260,9 +335,9 @@ MR_NIPW <- MR_NIPWf$tau
 MX_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "MQ"),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
@@ -275,10 +350,10 @@ MX_NIPW <- MX_NIPWf$tau
 RR_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "RF",
                                       tune_RF = FALSE),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "RF",
                                        tune_RF = FALSE))
 RR_NIPW <- RR_NIPWf$tau
@@ -286,10 +361,10 @@ RR_NIPW <- RR_NIPWf$tau
 RE_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "RF",
                                       tune_RF = FALSE),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "EBLUP",
                                        type_model = "gaussian"))
 RE_NIPW <- RE_NIPWf$tau
@@ -298,10 +373,10 @@ RE_NIPW <- RE_NIPWf$tau
 RM_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "RF",
                                       tune_RF = FALSE),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "MQ",
                                        type_model = "continuous"))
 RM_NIPW <- RM_NIPWf$tau
@@ -309,10 +384,10 @@ RM_NIPW <- RM_NIPWf$tau
 RX_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "RF",
                                       tune_RF = FALSE),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
@@ -324,12 +399,12 @@ RX_NIPW <- RX_NIPWf$tau
 XX_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "XGB",
                                       xgboost_params = list(CV_XGB = FALSE,
                                                             nfolds = 5,
                                                             nrounds = 50)),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
@@ -341,12 +416,12 @@ XX_NIPW <- XX_NIPWf$tau
 XE_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "XGB",
                                       xgboost_params = list(CV_XGB = FALSE,
                                                             nfolds = 5,
                                                             nrounds = 50)),
-                params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "EBLUP",
                                        type_model = "gaussian"))
 
@@ -355,12 +430,12 @@ XE_NIPW <- XE_NIPWf$tau
 XM_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "XGB",
                                       xgboost_params = list(CV_XGB = FALSE,
                                                             nfolds = 5,
                                                             nrounds = 50)),
-                params_impute_y = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "MQ",
                                        type_model = "continuous"))
 
@@ -370,12 +445,12 @@ XM_NIPW <- XM_NIPWf$tau
 XR_NIPWf <- hte(type_hte = "NIPW",
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                params_p_score = list(model_formula = formula_p_score,
                                       method =  "XGB",
                                       xgboost_params = list(CV_XGB = FALSE,
                                                             nfolds = 5,
                                                             nrounds = 50)),
-                params_impute_y = list(model_formula = y ~  X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                params_impute_y = list(model_formula = formula_y_impute,
                                        method = "RF",
                                        tune_RF = FALSE))
 
@@ -391,12 +466,12 @@ XR_NIPW <- XR_NIPWf$tau
 EEM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula =  formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula =   A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -405,12 +480,12 @@ EEM_AIPW <- EEM_AIPWf$tau
 EER_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -420,12 +495,12 @@ EER_AIPW <- EER_AIPWf$tau
 EEX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -437,12 +512,12 @@ EEX_AIPW <- EEX_AIPWf$tau
 EMM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -452,12 +527,12 @@ EMM_AIPW <- EMM_AIPWf$tau
 EMR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -467,12 +542,12 @@ EMR_AIPW <- EMR_AIPWf$tau
 EMX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -484,13 +559,13 @@ EMX_AIPW <- EMX_AIPWf$tau
 ERM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -500,13 +575,13 @@ ERM_AIPW <- ERM_AIPWf$tau
 ERR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -516,13 +591,13 @@ ERR_AIPW <- ERR_AIPWf$tau
 ERX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -534,15 +609,15 @@ ERX_AIPW <- ERX_AIPWf$tau
 EXM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -552,15 +627,15 @@ EXM_AIPW <- EXM_AIPWf$tau
 EXR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -570,15 +645,15 @@ EXR_AIPW <- EXR_AIPWf$tau
 EXX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "EBLUP",
                                   type_model = "gaussian"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -592,12 +667,12 @@ EXX_AIPW <- EXX_AIPWf$tau
 MEE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -607,12 +682,12 @@ MEE_AIPW <- MEE_AIPWf$tau
 MER_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -622,12 +697,12 @@ MER_AIPW <- MER_AIPWf$tau
 MEX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -639,12 +714,12 @@ MEX_AIPW <- MEX_AIPWf$tau
 MME_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -654,12 +729,12 @@ MME_AIPW <- MME_AIPWf$tau
 MMR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -669,12 +744,12 @@ MMR_AIPW <- MMR_AIPWf$tau
 MMX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -687,13 +762,13 @@ MMX_AIPW <- MMX_AIPWf$tau
 MRE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -703,13 +778,13 @@ MRE_AIPW <- MRE_AIPWf$tau
 MRR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -719,13 +794,13 @@ MRR_AIPW <- MRR_AIPWf$tau
 MRX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -737,15 +812,15 @@ MRX_AIPW <- MRX_AIPWf$tau
 MXE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =   A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -755,15 +830,15 @@ MXE_AIPW <- MXE_AIPWf$tau
 MXR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula =   A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -773,15 +848,15 @@ MXR_AIPW <- MXR_AIPWf$tau
 MXX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "MQ",
                                   type_model = "continuous"),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -795,12 +870,12 @@ MXX_AIPW <- MXX_AIPWf$tau
 REE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -810,12 +885,12 @@ REE_AIPW <- REE_AIPWf$tau
 REM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -824,12 +899,12 @@ REM_AIPW <- REM_AIPWf$tau
 REX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -842,12 +917,12 @@ REX_AIPW <- REX_AIPWf$tau
 RME_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -857,12 +932,12 @@ RME_AIPW <- RME_AIPWf$tau
 RMM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -871,12 +946,12 @@ RMM_AIPW <- RMM_AIPWf$tau
 RMX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -888,13 +963,13 @@ RMX_AIPW <- RMX_AIPWf$tau
 RRE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -904,13 +979,13 @@ RRE_AIPW <- RRE_AIPWf$tau
 RRM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -919,13 +994,13 @@ RRM_AIPW <- RRM_AIPWf$tau
 RRX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -937,15 +1012,15 @@ RRX_AIPW <- RRX_AIPWf$tau
 RXE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -955,15 +1030,15 @@ RXE_AIPW <- RXE_AIPWf$tau
 RXM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -973,15 +1048,15 @@ RXM_AIPW <- RXM_AIPWf$tau
 RXX_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "RF",
                                   tune_RF = FALSE),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "XGB",
                                         xgboost_params = list(CV_XGB = FALSE,
                                                               nfolds = 5,
@@ -995,14 +1070,14 @@ RXX_AIPW <- RXX_AIPWf$tau
 XEE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = TRUE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -1012,14 +1087,14 @@ XEE_AIPW <- XEE_AIPWf$tau
 XEM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = TRUE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -1029,14 +1104,14 @@ XEM_AIPW <- XEM_AIPWf$tau
 XER_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = TRUE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula =  A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "EBLUP"),
-                 params_impute_y = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -1046,14 +1121,14 @@ XER_AIPW <- XER_AIPWf$tau
 XME_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = TRUE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula =  y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -1063,14 +1138,14 @@ XME_AIPW <- XME_AIPWf$tau
 XMM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = TRUE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -1081,14 +1156,14 @@ XMM_AIPW <- XMM_AIPWf$tau
 XMR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = TRUE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "MQ"),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -1098,15 +1173,15 @@ XMR_AIPW <- XMR_AIPWf$tau
 XRE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = FALSE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -1116,15 +1191,15 @@ XRE_AIPW <- XRE_AIPWf$tau
 XRM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = FALSE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -1135,15 +1210,15 @@ XRM_AIPW <- XRM_AIPWf$tau
 XRR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = FALSE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "RF",
                                        tune_RF = FALSE),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -1153,17 +1228,17 @@ XRR_AIPW <- XRR_AIPWf$tau
 XXE_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = FALSE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "EBLUP",
                                         type_model = "gaussian"))
 
@@ -1173,17 +1248,17 @@ XXE_AIPW <- XXE_AIPWf$tau
 XXM_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = FALSE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "MQ",
                                         type_model = "continuous"))
 
@@ -1194,17 +1269,17 @@ XXM_AIPW <- XXM_AIPWf$tau
 XXR_AIPWf <- hte(type_hte = "AIPW",
                  data_sample,
                  data_out_of_sample,
-                 params_OR = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_OR = list(model_formula = formula_y_OR,
                                   method = "XGB",
                                   xgboost_params = list(CV_XGB = FALSE,
                                                         nfolds = 5,
                                                         nrounds = 50)),
-                 params_p_score = list(model_formula = A ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + (1|group),
+                 params_p_score = list(model_formula = formula_p_score,
                                        method =  "XGB",
                                        xgboost_params = list(CV_XGB = FALSE,
                                                              nfolds = 5,
                                                              nrounds = 50)),
-                 params_impute_y = list(model_formula = y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9 + X10 + A + (1 + A||group),
+                 params_impute_y = list(model_formula = formula_y_impute,
                                         method = "RF",
                                         tune_RF = FALSE))
 
@@ -1316,11 +1391,10 @@ Results = list(tau_true = tau_true,
                XXM_AIPW = XXM_AIPW,
                XXR_AIPW = XXR_AIPW,
 
-               Dir_tau = Dir_tau )
 
-outputName = paste("LMMsim", a, ".RData",sep="")
+               Dir_tau = Dir_tau)
+
+outputName = paste("LMMerrorssim", a, ".RData",sep="")
 outputPath = file.path("/home/reluga/Comp", outputName)
 #outputPath = file.path("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE",outputName)
 save("Results", file = outputPath)
-
-#c = Sys.time()

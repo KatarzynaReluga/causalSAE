@@ -86,7 +86,7 @@
 #' regression_type = "continuous",
 #' Ni_size  = 100,
 #' m = 50,
-#' fct_coef = "sin-exp",
+#' fct_coef = "sin_exp",
 #' no_sim = 1,
 #' seed = 1)
 #'
@@ -346,9 +346,11 @@ gen_outcome.continuous <- function(regression_obj,
   y0 = fx + coef_A_repeat * 0 + re_repeat + e
 
 
+
 #  y = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat + e
 #  y1 = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat + e
 #  y0 = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat + e
+
 
   output <- list(y = y,
                  y1 = y1,
@@ -584,7 +586,8 @@ fct_form.sin <- function(fct_obj, ...) {
   intercept <- fct_obj$intercept
   Xreg_outcome <- fct_obj$Xreg_outcome
 
-  fx <- sin(intercept + Xreg_outcome)
+  #fx <- sin(intercept + Xreg_outcome)
+  fx <- sin(10 * (intercept + Xreg_outcome))
 
   return(fx)
 }

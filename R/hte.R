@@ -44,6 +44,7 @@
 #'  \item boot_seed = 10,
 #' }
 #'
+#' @param estimated_p_score Vector of estimated propensity scores, default: \code{estimated_p_score = NULL}.
 #' @param ... Additional parameters
 #'
 #' @importFrom lme4 lmer glmer
@@ -138,6 +139,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                                          n_boot = 500,
                                          boot_seed = 10,
                                          type_boot = "both"),
+                estimated_p_score = NULL,
                 ...) {
 
   type_hte <- match.arg(type_hte)
@@ -149,7 +151,8 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
   estimate_hte <- estimate_hte(obj_hte = obj_hte,
                                params_p_score = params_p_score,
                                params_impute_y = params_impute_y,
-                               params_OR = params_OR)
+                               params_OR = params_OR,
+                               estimated_p_score = estimated_p_score)
 
   if (params_bootstrap$boot_var) {
     boot_var <- bootstrap_variance(obj_hte = obj_hte,
@@ -235,11 +238,13 @@ estimate_hte.OR <- function(obj_hte,
 estimate_hte.IPW <- function(obj_hte,
                              params_p_score,
                              params_impute_y,
+                             estimated_p_score,
                              ...) {
   # Obtain IPW data  -------------------------------
   IPW_data <- obtain_IPW_data(obj_hte,
                               params_p_score,
-                              params_impute_y)
+                              params_impute_y,
+                              estimated_p_score)
 
   # Estimate parameters ----------------------------------------------
   tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "HT"))
@@ -255,13 +260,15 @@ estimate_hte.IPW <- function(obj_hte,
 estimate_hte.NIPW <- function(obj_hte,
                              params_p_score,
                              params_impute_y,
+                             estimated_p_score,
                              ...) {
 
 
   # Obtain IPW data  -------------------------------
   IPW_data <- obtain_IPW_data(obj_hte,
                               params_p_score,
-                              params_impute_y)
+                              params_impute_y,
+                              estimated_p_score)
 
   tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "H"))
   return(tau_data)
@@ -278,6 +285,7 @@ estimate_hte.AIPW <- function(obj_hte,
                               params_p_score,
                               params_impute_y,
                               params_OR,
+                              estimated_p_score,
                               ...) {
 
 
@@ -288,7 +296,8 @@ estimate_hte.AIPW <- function(obj_hte,
   # Obtain IPW data ----------------------------------------------
   IPW_data <- obtain_IPW_data(obj_hte,
                               params_p_score,
-                              params_impute_y)
+                              params_impute_y,
+                              estimated_p_score)
   # Obtain outcome regression data -----------------------------------------
   data_OR <- fit_OR(obj_hte, params_OR)
 
@@ -316,7 +325,8 @@ estimate_hte.AIPW <- function(obj_hte,
 
 obtain_IPW_data <- function(obj_hte,
                             params_p_score,
-                            params_impute_y) {
+                            params_impute_y,
+                            estimated_p_score) {
   # Pre-process data --------------------------------------------------
   data_sample = obj_hte$data_sample
   data_out_of_sample = obj_hte$data_out_of_sample
@@ -324,6 +334,9 @@ obtain_IPW_data <- function(obj_hte,
   names_out_of_sample <- names(data_out_of_sample)
   names_data_sample <- names(data_sample)
 
+  if (!is.null(estimated_p_score)) {
+    ps_hat = estimated_p_score
+  } else {
   # Propensity score estimation --------------------------------------
   if (length(names_out_of_sample) == length(names_data_sample)) {
     data_p_score <- rbind(data_sample, data_out_of_sample)
@@ -340,7 +353,7 @@ obtain_IPW_data <- function(obj_hte,
                     xgboost_params = params_p_score$xgboost_params,
                     tune_RF = params_p_score$tune_RF)
 
-
+  }
   # Imputation -------------------------------------------------
   imputed_y <- impute_y(model_formula = params_impute_y$model_formula,
                         data_sample = data_sample,
