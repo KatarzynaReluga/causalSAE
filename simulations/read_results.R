@@ -1,6 +1,6 @@
-setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/Mplustune25_2")
-setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/Tuned/Mplustune100_2")
-setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/Mplus100_2s")
+#setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/Mplustune25_2")
+#setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/Tuned/Mplustune100_2")
+setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/Mplus100_2s")
 library(data.table)
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE")
 
@@ -273,34 +273,43 @@ Methods[RMSEPMediansorti100t]
 # All together
 
 
-MPlus25F <- read.csv('C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/resultsMPlus25F.csv')
+MPlus25F <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/resultsMPlus25F.csv')
 Methods <- MPlus25F$Method
 ARBPMedian25F <- MPlus25F$ARBPMedian
 ARBPMediansort25F <- sort(ARBPMedian25F, index.return = TRUE)$x
 ARBPMediansorti25F <- sort(ARBPMedian25F, index.return = TRUE)$ix
-Methods[ARBPMediansorti25F]
+Methods[ARBPMediansorti25F][1:10]
 plot(density(ARBPMediansort25F))
+plot(1:127, ARBPMedian25F)
 
 RMSEPMedian25F <- MPlus25F$RMSEPMedian
 RMSEPMediansort25F <- sort(RMSEPMedian25F, index.return = TRUE)$x
 RMSEPMediansorti25F <- sort(RMSEPMedian25F, index.return = TRUE)$ix
-Methods[RMSEPMediansorti25F]
-
-MPlus50 <- read.csv('C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/resultsMPlus50.csv')
-ARBPMedian50 <- MPlus50$ARBPMedian
-ARBPMediansort50 <- sort(ARBPMedian50, index.return = TRUE)$x
-ARBPMediansorti50 <- sort(ARBPMedian50, index.return = TRUE)$ix
-Methods[ARBPMediansorti50]
+Methods[RMSEPMediansorti25F][1:10]
+plot(density(RMSEPMediansort25F))
+plot(1:127, RMSEPMediansort25F)
 
 
-RMSEPMedian50 <- MPlus50$RMSEPMedian
-RMSEPMediansort50 <- sort(RMSEPMedian50, index.return = TRUE)$x
-RMSEPMediansorti50 <- sort(RMSEPMedian50, index.return = TRUE)$ix
-Methods[RMSEPMediansorti50]
-Methods <- MPlus50$Method
+MPlus50F <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/resultsMPlus50F.csv')
+ARBPMedian50F <- MPlus50F$ARBPMedian
+ARBPMediansort50F <- sort(ARBPMedian50F, index.return = TRUE)$x
+ARBPMediansorti50F <- sort(ARBPMedian50F, index.return = TRUE)$ix
+Methods[ARBPMediansorti50F]
+Methods[ARBPMediansorti50F][1:10]
+plot(density(ARBPMediansort50F))
+plot(1:127, ARBPMedian50F)
 
 
-MPlus100 <- read.csv('C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/resultsMPlus100.csv')
+RMSEPMedian50F <- MPlus50F$RMSEPMedian
+RMSEPMediansort50F <- sort(RMSEPMedian50F, index.return = TRUE)$x
+RMSEPMediansorti50F <- sort(RMSEPMedian50F, index.return = TRUE)$ix
+Methods[RMSEPMediansorti50F]
+Methods[ARBPMediansorti50F][1:10]
+plot(density(ARBPMediansort50F))
+plot(1:127, ARBPMedian50F)
+
+
+MPlus100 <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/resultsMPlus100.csv')
 ARBPMedian100 <- MPlus100$ARBPMedian
 ARBPMediansort100 <- sort(ARBPMedian100, index.return = TRUE)$x
 ARBPMediansorti100 <- sort(ARBPMedian100, index.return = TRUE)$ix
