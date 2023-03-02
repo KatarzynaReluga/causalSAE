@@ -89,7 +89,9 @@ set.seed(a * 2022)
 #  aa <- Sys.time()
 
   samp <- NULL
-  samp_index <- sample_subpopulations(data_pop, frac_nc = 0.1, frac_nt = 0.1)
+  samp_index <- sample_subpopulations(data_pop,
+                                      frac_nc = 0.1, frac_nt = 0.1,
+                                      seed = a * 2022)
   samp <- data_pop[samp_index, ]
   non_samp <- data_pop[ - samp_index, ]
 

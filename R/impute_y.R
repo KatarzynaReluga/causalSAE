@@ -276,9 +276,13 @@ imputation_y.RF <- function(obj_imputation_y,
   clusters = formatted_data$clusters_sample
 
   if (tune_RF) {
-    outcome_fit <- regression_forest(X, Y,
+    test  = "try-error"
+    while(test == "try-error") {
+    outcome_fit <-  try(regression_forest(X, Y,
                                      clusters = clusters,
-                                     tune.parameters = "all")
+                                     tune.parameters = "all"), silent = TRUE)
+    test = class(outcome_fit)
+    }
   } else {
     outcome_fit <- regression_forest(X, Y, clusters = clusters)
   }

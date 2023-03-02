@@ -1,6 +1,9 @@
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/Mplustune25_2")
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/Tuned/Mplustune100_2")
-setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/Mplus100_2s")
+setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/BadSetup/dbE")
+setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/Mplus_2")
+
+
 library(data.table)
 #setwd("C:/Users/katar/Documents/GitHub/causalSAE")
 
@@ -42,6 +45,7 @@ for (i in 1:SimNum) {
 
  # Join results and compute
 dt_res <- data.table(do.call(rbind, res))
+E_OR <- dt_res[dt_res$Method == "E_OR"]
 dt_Mean <- dt_res[, lapply(.SD, mean), by = "Method"]
 
 # 25
@@ -80,8 +84,8 @@ RB <- dt_Mean[c(4:72), c(102:201)]/abs(tau_trueM)
 RBP <- dt_Mean[c(4:72), c(102:201)]/abs(tau_trueM) * 100
 
 # Design based
-RB <- dt_Mean[c(4:9), c(43:83)]/abs(tau_trueM)
-RBP <- dt_Mean[c(4:9), c(43:83)]/abs(tau_trueM) * 100
+RB <- dt_Mean[c(4:72), c(43:83)]/abs(tau_trueM)
+RBP <- dt_Mean[c(4:72), c(43:83)]/abs(tau_trueM) * 100
 
 
 
@@ -173,7 +177,7 @@ RMSEMean <- rowMeans(RMSEP)
 RMSEPMedian <- apply(RMSEP, 1, quantile, probs = 0.5)
 
 
-resultsMPlus100tune <- data.frame(Method = Methods,
+resultsMs <- data.frame(Method = Methods,
 
            RBPMean = RBPMean,
            RBPMedian = RBPMedian,
@@ -184,8 +188,8 @@ resultsMPlus100tune <- data.frame(Method = Methods,
            RMSEMean = RMSEMean,
            RMSEPMedian = RMSEPMedian)
 
-write.csv(resultsMPlus100tune,
-          file = 'resultsMPlus100tune.csv', row.names = FALSE)
+write.csv(resultsMs,
+          file = 'resultsEs.csv', row.names = FALSE)
 
 # Not tuned
 
@@ -281,14 +285,33 @@ ARBPMediansorti25F <- sort(ARBPMedian25F, index.return = TRUE)$ix
 Methods[ARBPMediansorti25F][1:10]
 plot(density(ARBPMediansort25F))
 plot(1:127, ARBPMedian25F)
+which(ARBPMedian25F <=21.57)
+Methods[which(ARBPMedian25F <=21.57)]
+# 1   3   6  21  27  30  32  46  49  52  55  58  90 104 127
 
+
+# 2   3   6   9  15  19  21  24  27  30  46  49  52  55  58  64
+# 67  69  77  81  87  90 104 107 110 113 116
 RMSEPMedian25F <- MPlus25F$RMSEPMedian
 RMSEPMediansort25F <- sort(RMSEPMedian25F, index.return = TRUE)$x
 RMSEPMediansorti25F <- sort(RMSEPMedian25F, index.return = TRUE)$ix
 Methods[RMSEPMediansorti25F][1:10]
-plot(density(RMSEPMediansort25F))
-plot(1:127, RMSEPMediansort25F)
+plot(density(RMSEPMedian25F))
+plot(1:127, RMSEPMedian25F)
+plot(1:126, RMSEPMedian25F[-127])
+plot(1:126, RMSEPMedian25F[-127], ylim = c(0, 36))
+Methods[which(RMSEPMedian25F <= 36)]
+#2   3   6   9  15  19  21  24  27  30  31  43  44  46  49  52
+#55  56  58  64  67  69  77  81  87  90 104 107 110 113 116
 
+#[1]   2   3   6   9  15  19  21  24  27  30  46  49  52  55
+# 58  69  77  81  87  90 104 107 110 113 116
+
+#2   3   6   9  15  19  21  24  27  30  46  49  52  55
+# 58  69 77  87  90 104 107 110 113 116
+
+#2  3  6  9 15 19 21 24 27 30 46 49 52 55
+# 58 64 67
 
 MPlus50F <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/resultsMPlus50F.csv')
 ARBPMedian50F <- MPlus50F$ARBPMedian
@@ -298,28 +321,148 @@ Methods[ARBPMediansorti50F]
 Methods[ARBPMediansorti50F][1:10]
 plot(density(ARBPMediansort50F))
 plot(1:127, ARBPMedian50F)
+which(ARBPMedian50F <=19)
+Methods[which(ARBPMedian50F <=22)]
 
+# 5  10  14  18  33  36  39  42  45  48  51  54  57  60  63  66
+# 76  80  97 100 103 106 109 112 115
+
+# 3 6 21 27 30 46 49 52 55 58 90 104
+
+# 2   3   6   9  15  19  21  24  27  30  46  49  52  55  58  64
+# 67  69  77  81  87  90 104 107 110 113 116
 
 RMSEPMedian50F <- MPlus50F$RMSEPMedian
 RMSEPMediansort50F <- sort(RMSEPMedian50F, index.return = TRUE)$x
 RMSEPMediansorti50F <- sort(RMSEPMedian50F, index.return = TRUE)$ix
 Methods[RMSEPMediansorti50F]
 Methods[ARBPMediansorti50F][1:10]
-plot(density(ARBPMediansort50F))
-plot(1:127, ARBPMedian50F)
+plot(density(RMSEPMedian50F))
+plot(1:127, RMSEPMedian50F)
+plot(1:126, RMSEPMedian50F[-127], ylim = c(0,30))
+plot(1:126, RMSEPMedian50F[-127], ylim = c(25,35))
+Methods[which(RMSEPMedian50F <= 30)]
+#[1]   2   3   6   9  15  19  21  24  27  30  46  49  52  55
+# 69  77 81  87  90 104 107 110 113
 
 
-MPlus100 <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/resultsMPlus100.csv')
-ARBPMedian100 <- MPlus100$ARBPMedian
-ARBPMediansort100 <- sort(ARBPMedian100, index.return = TRUE)$x
-ARBPMediansorti100 <- sort(ARBPMedian100, index.return = TRUE)$ix
-Methods[ARBPMediansorti100]
+#2  3  6  9 15 19 21 24 27 30 46 49 52 55
+# 58 64 67
+MPlus100F <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/PositiveEffects/resultsMPlus100F.csv')
+ARBPMedian100F <- MPlus100F$ARBPMedian
+ARBPMediansort100F <- sort(ARBPMedian100F, index.return = TRUE)$x
+ARBPMediansorti100F <- sort(ARBPMedian100F, index.return = TRUE)$ix
+Methods[ARBPMediansorti100F]
+plot(density(ARBPMediansort100F))
+plot(1:127, ARBPMedian100F)
+which(ARBPMedian100F <= 18.63702)
+Methods[which(ARBPMedian100F <= 18.63702)]
+# 2   3   6   9  15  19  21  24  27  30  46  49  52  55  58  64
+# 67  69  77  81  87  90 104 107 110 113 116
 
 
-RMSEPMedian100 <- MPlus100$RMSEPMedian
-RMSEPMediansort100 <- sort(RMSEPMedian100, index.return = TRUE)$x
-RMSEPMediansorti100 <- sort(RMSEPMedian100, index.return = TRUE)$ix
-Methods[RMSEPMediansorti100]
+v100 <- which(ARBPMedian100F <= 18.63702)
+
+RMSEPMedian100F <- MPlus100F$RMSEPMedian
+RMSEPMediansort100F <- sort(RMSEPMedian100F, index.return = TRUE)$x
+RMSEPMediansorti100F <- sort(RMSEPMedian100F, index.return = TRUE)$ix
+Methods[RMSEPMediansorti100F]
+plot(density(RMSEPMedian100F))
+plot(1:127, RMSEPMedian100F)
+plot(1:126, RMSEPMedian100F[-127], ylim = c(22,40))
+Methods[which(RMSEPMedian100F <= 30)]
+#2  3  6  9 15 19 21 24 27 30 46 49 52 55
+#58 64 67
+ind = c(2,3,6,9,15,19,21, 24, 27, 30, 46, 49, 52, 55)
+ind100  = c(58, 64, 67)
+ind50  = c(69, 77, 81, 87, 90, 104, 107, 110, 113)
+ind25  = c(58, 69, 77, 87, 90, 104, 107, 110, 113, 116)
+
+vec <- numeric(127)
+vec100 <- numeric(127)
+vec50 <- numeric(127)
+vec25 <- numeric(127)
+
+v100 <- numeric(127)
+v50 <- numeric(127)
+v25 <- numeric(127)
+
+
+vec[ind] <- RMSEPMedian100F[ind]
+vec[ind] <- RMSEPMedian50F[ind]
+vec[ind] <- RMSEPMedian25F[ind]
+
+Methods[ind]
+
+vec100[ind100] <- RMSEPMedian100F[ind100]
+vec50[ind50] <- RMSEPMedian50F[ind50]
+vec25[ind25] <- RMSEPMedian25F[ind25]
+
+v100[which(ARBPMedian100F <= 18.63702)] <- ARBPMedian100F[which(ARBPMedian100F <= 18.63702)]
+v50[which(ARBPMedian50F <=19)] <- ARBPMedian50F[which(ARBPMedian50F <=19)]
+v25[which(ARBPMedian25F <=21.57)] <- ARBPMedian25F[which(ARBPMedian25F <=21.57)]
+
+# Plots
+plot(1:127, RMSEPMedian100F,  col = 1, lwd = 2, pch = 20,
+     xlab = " ", ylab = " ", main = "RRMSE", ylim = c(20, 40),
+     xaxt="n", yaxt="n", cex.main = 2)
+lines(1:127, vec, col = "blue", lwd = 4, type = "p", lty = 0)
+lines(1:127, vec100, col = "darkgreen", lwd = 4, type = "p", lty = 0)
+lines(1:127, vec50, col = "darkgreen", lwd = 4, type = "p", lty = 0)
+lines(1:127, vec25, col = "darkgreen", lwd = 4, type = "p", lty = 0)
+
+#title(ylab = "RRMSE", line = 2, cex.lab = 1.2)
+title(xlab = "Estimation methods", line = 1, cex.lab = 2)
+b=c(10, 20, 25,  30, 35,  40, 60, 80, 100, 120, 140)
+axis(2, at=b,labels=b,cex.axis=1.5)
+
+title(xlab = "Estimation methods", line = 2.1, cex.lab = 1.2)
+
+plot(1:127, ARBPMedian100F,  col = 1, lwd = 2, pch = 20,
+     xlab = " ", ylab = " ", main = "ARB", ylim = c(10, 40),
+     xaxt="n", yaxt="n", cex.main = 2)
+plot(1:127, ARBPMedian50F,  col = 1, lwd = 2, pch = 20,
+     xlab = " ", ylab = " ", main = "ARB", ylim = c(10, 40),
+     xaxt="n", yaxt="n", cex.main = 2)
+plot(1:127, ARBPMedian25F,  col = 1, lwd = 2, pch = 20,
+     xlab = " ", ylab = " ", main = "ARB", ylim = c(10, 40),
+     xaxt="n", yaxt="n", cex.main = 2)
+lines(1:127, vec, col = "blue", lwd = 4, type = "p", lty = 0)
+lines(1:127, v100, col = "darkgreen", lwd = 4, type = "p", lty = 0)
+lines(1:127, v50, col = "darkgreen", lwd = 4, type = "p", lty = 0)
+lines(1:127, v25, col = "darkgreen", lwd = 4, type = "p", lty = 0)
+
+#title(ylab = "RRMSE", line = 2, cex.lab = 1.2)
+title(xlab = "Estimation methods", line = 1, cex.lab = 2)
+b = c(10, 20, 25,  30, 35,  40, 60, 80, 100, 120, 140)
+b = c(10, 15, 20, 25,  30, 35, 40, 50, 60, 70, 80, 100, 120, 140)
+axis(2, at=b,labels=b,cex.axis=1.5)
+
+
+dbE <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/resultsE.csv')
+Methods <- dbE$Method
+
+ARBPMediandbE <- dbE$ARBPMedian
+ARBPMediansortdbE <- sort(ARBPMediandbE, index.return = TRUE)$x
+ARBPMediansortidbE <- sort(ARBPMediandbE, index.return = TRUE)$ix
+Methods[ARBPMediansortidbE]
+plot(density(ARBPMediansortdbE))
+plot(1:69, ARBPMediandbE)
+
+
+RMSEPMediandbE <- dbE$RMSEPMedian
+RMSEPMediansortdbE <- sort(RMSEPMediandbE, index.return = TRUE)$x
+RMSEPMediansortidbE <- sort(RMSEPMediandbE, index.return = TRUE)$ix
+Methods[RMSEPMediansortidbE]
+plot(density(RMSEPMediandbE))
+plot(1:69, RMSEPMediandbE)
+
+
+dbM <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/resultsM.csv')
+dbX <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/resultsX.csv')
+dbR <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/resultsR.csv')
+dbRtune <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/resultsRtune.csv')
+dbXtune <- read.csv('C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/resultsXtune.csv')
 
 
 # Means processing -----------------------------------------

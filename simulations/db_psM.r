@@ -89,7 +89,9 @@ set.seed(a * 2022)
 #  aa <- Sys.time()
 
   samp <- NULL
-  samp_index <- sample_subpopulations(data_pop, frac_nc = 0.1, frac_nt = 0.1)
+  samp_index <- sample_subpopulations(data_pop,
+                                      frac_nc = 0.1, frac_nt = 0.1,
+                                      seed = a * 2022)
   samp <- data_pop[samp_index, ]
   non_samp <- data_pop[ - samp_index, ]
 
@@ -963,7 +965,7 @@ set.seed(a * 2022)
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
                                     method = "XGB",
-                                    xgboost_params = list(CV_XGB = TRUE,
+                                    xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
                                                           nrounds = 50)),
                    params_p_score = list(model_formula = formula_p_score,
@@ -980,7 +982,7 @@ set.seed(a * 2022)
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
                                     method = "XGB",
-                                    xgboost_params = list(CV_XGB = TRUE,
+                                    xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
                                                           nrounds = 50)),
                    params_p_score = list(model_formula = formula_p_score,
@@ -997,7 +999,7 @@ set.seed(a * 2022)
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
                                     method = "XGB",
-                                    xgboost_params = list(CV_XGB = TRUE,
+                                    xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
                                                           nrounds = 50)),
                    params_p_score = list(model_formula = formula_p_score,
@@ -1014,7 +1016,7 @@ set.seed(a * 2022)
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
                                     method = "XGB",
-                                    xgboost_params = list(CV_XGB = TRUE,
+                                    xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
                                                           nrounds = 50)),
                    params_p_score = list(model_formula = formula_p_score,
@@ -1031,7 +1033,7 @@ set.seed(a * 2022)
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
                                     method = "XGB",
-                                    xgboost_params = list(CV_XGB = TRUE,
+                                    xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
                                                           nrounds = 50)),
                    params_p_score = list(model_formula = formula_p_score,
@@ -1049,7 +1051,7 @@ set.seed(a * 2022)
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
                                     method = "XGB",
-                                    xgboost_params = list(CV_XGB = TRUE,
+                                    xgboost_params = list(CV_XGB = FALSE,
                                                           nfolds = 5,
                                                           nrounds = 50)),
                    params_p_score = list(model_formula = formula_p_score,
