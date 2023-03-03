@@ -81,12 +81,7 @@ formula_p_score = A ~ sex + nationality + age + house_size + married +
 
 a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 # Simple checks of the code ------------------------------------------------------------------
-#for (i in 1:NoSim) {
-#b  = Sys.time()
-#  print(i)
 set.seed(a * 2022)
-
-#  aa <- Sys.time()
 
   samp <- NULL
   samp_index <- sample_subpopulations(data_pop,
@@ -119,27 +114,14 @@ set.seed(a * 2022)
 
   # RF OR ------------------------------------------------------------------------------------------------------------
 
-#  R_ORf <- hte(type_hte = "OR",
-#               data_sample = samp,
-#               data_out_of_sample = non_samp,
-#               params_OR = list(model_formula = formula_y_OR,
-#                                method = "RF",
-#                                tune_RF = TRUE))
-#  R_OR <- R_ORf$tau
-
-
-  test  = "try-error"
-  while(test == "try-error") {
-    R_ORf <- try(hte(type_hte = "OR",
-                 data_sample = samp,
-                 data_out_of_sample = non_samp,
-                 params_OR = list(model_formula = formula_y_OR,
-                                  method = "RF",
-                                  tune_RF = TRUE)), silent=TRUE)
-    test = class(R_ORf)
-  }
-
+  R_ORf <- hte(type_hte = "OR",
+               data_sample = samp,
+               data_out_of_sample = non_samp,
+               params_OR = list(model_formula = formula_y_OR,
+                                method = "RF",
+                                tune_RF = TRUE))
   R_OR <- R_ORf$tau
+
   # EBLUP XGB -----------------------------------------------------------------------------------------------------------
 
   X_ORf <- hte(type_hte = "OR",
@@ -257,8 +239,6 @@ set.seed(a * 2022)
   ######################################################################################################
   # R #
   # RR ------------------------------------------------------------------
- # test  = "try-error"
- # while(test == "try-error") {
   RR_NIPWf <- hte(type_hte = "NIPW",
                   data_sample = samp,
                   data_out_of_sample = non_samp,
@@ -268,7 +248,6 @@ set.seed(a * 2022)
                   params_impute_y = list(model_formula = formula_y_impute,
                                          method = "RF",
                                          tune_RF = TRUE))
-#  }
   RR_NIPW <- RR_NIPWf$tau
   # RE ------------------------------------------------------------------
   RE_NIPWf <- hte(type_hte = "NIPW",
@@ -295,8 +274,6 @@ set.seed(a * 2022)
                                          type_model = "continuous"))
   RM_NIPW <- RM_NIPWf$tau
   # RX ------------------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
   RX_NIPWf <- hte(type_hte = "NIPW",
                   data_sample = samp,
                   data_out_of_sample = non_samp,
@@ -308,7 +285,6 @@ set.seed(a * 2022)
                                          xgboost_params = list(CV_XGB = TRUE,
                                                                nfolds = 5,
                                                                nrounds = 50)))
-#  }
   RX_NIPW <- RX_NIPWf$tau
   ######################################################################################################
   # X #
@@ -359,8 +335,6 @@ set.seed(a * 2022)
   XM_NIPW <- XM_NIPWf$tau
 
   # XR -------------------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
   XR_NIPWf <- hte(type_hte = "NIPW",
                   data_sample = samp,
                   data_out_of_sample = non_samp,
@@ -372,9 +346,7 @@ set.seed(a * 2022)
                   params_impute_y = list(model_formula = formula_y_impute,
                                          method = "RF",
                                          tune_RF = TRUE))
-#  }
   XR_NIPW <- XR_NIPWf$tau
-
 
   ##############################################################################################################
   # AIPW #
@@ -395,8 +367,6 @@ set.seed(a * 2022)
 
   EEM_AIPW <- EEM_AIPWf$tau
   # EER --------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
   EER_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -410,7 +380,7 @@ set.seed(a * 2022)
                                           tune_RF = TRUE))
 
   EER_AIPW <- EER_AIPWf$tau
-#}
+
   # EEX ----------------------
   EEX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
@@ -444,8 +414,6 @@ set.seed(a * 2022)
   EMM_AIPW <- EMM_AIPWf$tau
 
   # EMR --------------------------------------------
- # test  = "try-error"
-#  while(test == "try-error") {
   EMR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -457,7 +425,6 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#  }
 
   EMR_AIPW <- EMR_AIPWf$tau
 
@@ -479,8 +446,6 @@ set.seed(a * 2022)
   EMX_AIPW <- EMX_AIPWf$tau
 
   # ERM ------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
   ERM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -493,12 +458,11 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "MQ",
                                           type_model = "continuous"))
-#}
+
   ERM_AIPW <- ERM_AIPWf$tau
 
   # ERR ------------------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
+
   ERR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -511,12 +475,11 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#}
+
   ERR_AIPW <- ERR_AIPWf$tau
 
   # ERX -------------------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
+
   ERX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -531,7 +494,7 @@ set.seed(a * 2022)
                                           xgboost_params = list(CV_XGB = TRUE,
                                                                 nfolds = 5,
                                                                 nrounds = 50)))
-#}
+
   ERX_AIPW <- ERX_AIPWf$tau
 
   # EXM --------------------------------------------------
@@ -553,8 +516,7 @@ set.seed(a * 2022)
   EXM_AIPW <- EXM_AIPWf$tau
 
   # EXR --------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
+
   EXR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -569,7 +531,7 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#}
+
   EXR_AIPW <- EXR_AIPWf$tau
 
   # EXX ----------------------------------------------------------------
@@ -610,8 +572,6 @@ set.seed(a * 2022)
   MEE_AIPW <- MEE_AIPWf$tau
 
   # MER ------------------------------------------------------
- # test  = "try-error"
-#  while(test == "try-error") {
   MER_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -623,7 +583,6 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#}
   MER_AIPW <- MER_AIPWf$tau
 
   # MER ------------------------------------------------------
@@ -659,8 +618,6 @@ set.seed(a * 2022)
   MME_AIPW <- MME_AIPWf$tau
 
   # MER ------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
   MMR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -672,7 +629,7 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#}
+
   MMR_AIPW <- MMR_AIPWf$tau
 
   # MMX ------------------------------------------------------
@@ -693,8 +650,7 @@ set.seed(a * 2022)
   MMX_AIPW <- MMX_AIPWf$tau
 
   # MRE ------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
+
   MRE_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -707,12 +663,11 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "EBLUP",
                                           type_model = "gaussian"))
-#}
+
   MRE_AIPW <- MRE_AIPWf$tau
 
   # MRR ------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
+
   MRR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -725,12 +680,11 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#}
+
   MRR_AIPW <- MRR_AIPWf$tau
 
   # MRX ------------------------------------------------------
-#  test  = "try-error"
-#  while(test == "try-error") {
+
   MRX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -745,7 +699,7 @@ set.seed(a * 2022)
                                           xgboost_params = list(CV_XGB = TRUE,
                                                                 nfolds = 5,
                                                                 nrounds = 50)))
-#}
+
   MRX_AIPW <- MRX_AIPWf$tau
 
   # MXE ------------------------------------------------------
@@ -767,8 +721,6 @@ set.seed(a * 2022)
   MXE_AIPW <- MXE_AIPWf$tau
 
   # MRR ------------------------------------------------------
-#  test  = "try-error"
-##  while(test == "try-error") {
   MXR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -783,7 +735,7 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-#}
+
   MXR_AIPW <- MXR_AIPWf$tau
 
   # MRX ------------------------------------------------------
@@ -809,9 +761,8 @@ set.seed(a * 2022)
   # RR -----------------------------------------------------------
   #######################################################################
   # REE ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
-  REE_AIPWf <- try(hte(type_hte = "AIPW",
+
+  REE_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
@@ -821,15 +772,12 @@ set.seed(a * 2022)
                                          method =  "EBLUP"),
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "EBLUP",
-                                          type_model = "gaussian")), silent = TRUE)
-  test = class(REE_AIPWf)
-}
+                                          type_model = "gaussian"))
+
   REE_AIPW <- REE_AIPWf$tau
 
   # REM ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
-  REM_AIPWf <- try(hte(type_hte = "AIPW",
+  REM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
@@ -839,14 +787,11 @@ set.seed(a * 2022)
                                          method =  "EBLUP"),
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "MQ",
-                                          type_model = "continuous")), silent = TRUE)
-  test = class(REM_AIPWf)
-}
+                                          type_model = "continuous"))
   REM_AIPW <- REM_AIPWf$tau
   # REX ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
-  REX_AIPWf <- try(hte(type_hte = "AIPW",
+
+  REX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
@@ -858,15 +803,13 @@ set.seed(a * 2022)
                                           method = "XGB",
                                           xgboost_params = list(CV_XGB = TRUE,
                                                                 nfolds = 5,
-                                                                nrounds = 50))), silent = TRUE)
-  test = class(REX_AIPWf)
-}
+                                                                nrounds = 50)))
+
   REX_AIPW <- REE_AIPWf$tau
 
   # RME ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
-  RME_AIPWf <- try(hte(type_hte = "AIPW",
+
+  RME_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
                    params_OR = list(model_formula = formula_y_OR,
@@ -876,14 +819,11 @@ set.seed(a * 2022)
                                          method =  "MQ"),
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "EBLUP",
-                                          type_model = "gaussian")), silent = TRUE)
-  test = class(RME_AIPWf)
-  }
+                                          type_model = "gaussian"))
+
   RME_AIPW <- RME_AIPWf$tau
 
   # RMM ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RMM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -895,11 +835,9 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "MQ",
                                           type_model = "continuous"))
-  }
+
   RMM_AIPW <- RMM_AIPWf$tau
   # RMX ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RMX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -913,12 +851,8 @@ set.seed(a * 2022)
                                           xgboost_params = list(CV_XGB = TRUE,
                                                                 nfolds = 5,
                                                                 nrounds = 50)))
-  }
   RMX_AIPW <- RMX_AIPWf$tau
-
   # RRE ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RRE_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -931,12 +865,9 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "EBLUP",
                                           type_model = "gaussian"))
-  }
   RRE_AIPW <- RRE_AIPWf$tau
 
   # RRM ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RRM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -949,11 +880,8 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "MQ",
                                           type_model = "continuous"))
-  }
   RRM_AIPW <- RRM_AIPWf$tau
   # RRX ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RRX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -968,12 +896,9 @@ set.seed(a * 2022)
                                           xgboost_params = list(CV_XGB = TRUE,
                                                                 nfolds = 5,
                                                                 nrounds = 50)))
-  }
   RRX_AIPW <- RRX_AIPWf$tau
 
   # RXE ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RXE_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -988,11 +913,8 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "EBLUP",
                                           type_model = "gaussian"))
-  }
   RXE_AIPW <- RXE_AIPWf$tau
   # RXM ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   RXM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1007,12 +929,11 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "MQ",
                                           type_model = "continuous"))
-  }
+
   RXM_AIPW <- RXM_AIPWf$tau
 
   # RXX ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
+
   RXX_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1030,7 +951,6 @@ set.seed(a * 2022)
                                                                 nfolds = 5,
                                                                 nrounds = 50)))
 
-  }
   RXX_AIPW <- RXX_AIPWf$tau
 
   # X -----------------------------------------------------------
@@ -1070,8 +990,7 @@ set.seed(a * 2022)
   XEM_AIPW <- XEM_AIPWf$tau
 
   # XER ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
+
   XER_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1085,7 +1004,7 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-  }
+
   XER_AIPW <- XER_AIPWf$tau
 
   # XME ------------------------------------------------------
@@ -1124,8 +1043,7 @@ set.seed(a * 2022)
 
 
   # XER ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
+
   XMR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1139,12 +1057,10 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-  }
+
   XMR_AIPW <- XMR_AIPWf$tau
 
   # XRE ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   XRE_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1159,12 +1075,9 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "EBLUP",
                                           type_model = "gaussian"))
-  }
   XRE_AIPW <- XRE_AIPWf$tau
 
   # XRM ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   XRM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1179,13 +1092,10 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "MQ",
                                           type_model = "continuous"))
-  }
   XRM_AIPW <- XRM_AIPWf$tau
 
 
   # XRR ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   XRR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1200,7 +1110,6 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-  }
   XRR_AIPW <- XRR_AIPWf$tau
 
   # XXE ------------------------------------------------------
@@ -1222,7 +1131,6 @@ set.seed(a * 2022)
                                           type_model = "gaussian"))
 
   XXE_AIPW <- XXE_AIPWf$tau
-
   # XRM ------------------------------------------------------
   XXM_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
@@ -1243,10 +1151,7 @@ set.seed(a * 2022)
 
   XXM_AIPW <- XXM_AIPWf$tau
 
-
   # XER ------------------------------------------------------
-  test  = "try-error"
-  while(test == "try-error") {
   XXR_AIPWf <- hte(type_hte = "AIPW",
                    data_sample = samp,
                    data_out_of_sample = non_samp,
@@ -1263,15 +1168,13 @@ set.seed(a * 2022)
                    params_impute_y = list(model_formula = formula_y_impute,
                                           method = "RF",
                                           tune_RF = TRUE))
-  }
+
   XXR_AIPW <- XXR_AIPWf$tau
   ####################
   # Direct estimator #
   ####################
   Dir_tau <- (calculate_tau(list(samp), type_tau = "H"))[[1]]$tau
 
-#  bb <- Sys.time()
-#}
   ###########################################################################
   # Store results in the list - standard for baobab.                         #
   ############################################################################

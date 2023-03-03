@@ -281,7 +281,7 @@ imputation_y.RF <- function(obj_imputation_y,
     outcome_fit <-  try(regression_forest(X, Y,
                                      clusters = clusters,
                                      tune.parameters = "all"), silent = TRUE)
-    test = class(outcome_fit)
+    test = class(outcome_fit)[1]
     }
   } else {
     outcome_fit <- regression_forest(X, Y, clusters = clusters)

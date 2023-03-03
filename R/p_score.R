@@ -180,12 +180,12 @@ p_score.RF <- function(obj_p_score,
   clusters = formatted_data$cluster_sample
 
   if (tune_RF) {
-    test  = "try-error"
-    while(test == "try-error") {
-    ps_fit <- try(regression_forest(X, Y,
+ #   test  = "try-error"
+#    while(test == "try-error") {
+    ps_fit <- regression_forest(X, Y,
                                 clusters = clusters,
-                                tune.parameters = "all"), silent = TRUE)
-    }
+                                tune.parameters = "all")
+#    }
   } else {
     ps_fit <- regression_forest(X, Y, clusters = clusters)
   }
