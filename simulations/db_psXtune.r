@@ -1291,7 +1291,7 @@ set.seed(a * 2022)
 
                  Dir_tau = Dir_tau)
 
-  outputName = paste("db_psXtunet", a, ".RData", sep = "")
+  outputName = paste("db_psXtune", a, ".RData", sep = "")
   outputPath = file.path("/home/reluga/Comp", outputName)
   #outputPath = file.path("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE",outputName)
   save("Results", file = outputPath)
