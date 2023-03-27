@@ -180,17 +180,15 @@ p_score.RF <- function(obj_p_score,
   clusters = formatted_data$cluster_sample
 
   if (tune_RF) {
- #   test  = "try-error"
-#    while(test == "try-error") {
     ps_fit <- regression_forest(X, Y,
                                 clusters = clusters,
                                 tune.parameters = "all")
-#    }
   } else {
     ps_fit <- regression_forest(X, Y, clusters = clusters)
   }
 
-  ps_hat <- unname(unlist(predict(ps_fit, newdata = X)))
+#  ps_hat <- unname(unlist(predict(ps_fit, newdata = X)))
+  ps_hat <- c(ps_fit$predictions)
 
   return(ps_hat)
 

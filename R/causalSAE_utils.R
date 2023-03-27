@@ -36,7 +36,7 @@ format_data <- function(model_formula,
   # Get the predictors without group variable
   predictor <- paste(vars[-length(vars)], collapse = " + ")
 
-  X = as.matrix(data_sample[, vars[ - length(vars)],  drop = F])
+  X = as.matrix(data_sample[, vars[ - length(vars)],  drop = FALSE])
   Y = data_sample[, response]
   clusters_sample  = as.numeric(data_sample$group)
 
@@ -44,7 +44,7 @@ format_data <- function(model_formula,
     X_newdata = NULL
     clusters_out_of_sample = NULL
   } else {
-    X_newdata = as.matrix(data_out_of_sample[, vars[ - length(vars)],  drop = F])
+    X_newdata = as.matrix(data_out_of_sample[, vars[ - length(vars)],  drop = FALSE])
     clusters_out_of_sample = as.numeric(data_out_of_sample$group)
   }
 

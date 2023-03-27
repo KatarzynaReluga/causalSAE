@@ -343,7 +343,7 @@ obtain_IPW_data <- function(obj_hte,
   } else {
     y <- data_sample$y
     data_sample_p_score <- select(data_sample, -y)
-    data_p_score <- rbind(data_sample, data_out_of_sample)
+    data_p_score <- rbind(data_sample_p_score, data_out_of_sample)
   }
   obj_p_score <- list(data_p_score = data_p_score)
   class(obj_p_score) <- params_p_score$method

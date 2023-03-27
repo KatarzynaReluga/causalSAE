@@ -38,7 +38,7 @@ class(obj_p_score_RF) <- "RF"
 
 ps_hat_RF <-  p_score(obj_p_score = obj_p_score_RF,
                       model_formula = formula_p_score,
-                      tune_RF = FALSE)
+                      tune_RF = TRUE)
 
 data_pop$p_score <- ps_hat_RF
 
