@@ -102,16 +102,13 @@ p_score <- function(...)
 #' @export
 #'
 
-
 p_score.EBLUP <- function(obj_p_score,
                           model_formula,
                           ...) {
 
   data_p_score <- obj_p_score$data_p_score
-  #a = Sys.time()
   ps_fit <- glmer(model_formula, data = data.frame(data_p_score),
                   family = binomial(link = "logit"))
-  #b = Sys.time()
   ps_hat <- as.vector(predict(ps_fit,
                               newdata = data_p_score,
                               type = "response",
@@ -149,8 +146,6 @@ p_score.MQ <- function(obj_p_score,
                       data = data_p_score,
                       q  = 0.5, method = "binom")
 
-#  ps_hat <- unname(unlist(predict(ps_fit, newdata = data_p_score,
-#                                  regression_type = "binary")))
   ps_hat <- predict(ps_fit, newdata = data_p_score, regression_type = "binary")
 
   return(ps_hat)
@@ -187,7 +182,6 @@ p_score.RF <- function(obj_p_score,
     ps_fit <- regression_forest(X, Y, clusters = clusters)
   }
 
-#  ps_hat <- unname(unlist(predict(ps_fit, newdata = X)))
   ps_hat <- c(ps_fit$predictions)
 
   return(ps_hat)
@@ -218,7 +212,6 @@ p_score.XGB <- function(obj_p_score,
   nfolds = xgboost_params$nfolds
   nrounds = xgboost_params$nrounds
 
-  #clusters  = as.numeric(data_sample$group)
   if (CV_XGB) {
 
     xgboost_cv <- xgb.cv(data = X, label = Y,

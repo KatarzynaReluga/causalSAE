@@ -31,8 +31,8 @@ Internal generic function to obtain bootstrap indices
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{sample}: Obtain bootstrap indices bootstrapping withing the sample
+\item \code{sample}: Obtain bootstrap indices bootstrapping within the sample
 
-\item \code{both}: Obtain bootstrap indices bootstrapping withing the sample
+\item \code{both}: Obtain bootstrap indices bootstrapping within the sample
 }}
 

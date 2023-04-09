@@ -14,6 +14,7 @@
 #'  \item nfolds - number of folds in cross-validation, default: nfolds = 5.
 #'  \item nrounds - the max number of iterations, default: nrounds = 50.
 #' }
+#'
 #' @param ... Additional parameters.
 #'
 #' @export
@@ -73,33 +74,33 @@
 #' model_formula = y ~ X1 + Xo1 + A + (1 + A||group)
 #'
 #' impute_EBLUP <- impute_y(model_formula,
-#'                    data_sample,
-#'                    data_out_of_sample,
-#'                    method = "EBLUP",
-#'                    type_model = "gaussian")
+#'                          data_sample,
+#'                          data_out_of_sample,
+#'                          method = "EBLUP",
+#'                          type_model = "gaussian")
 #'
 #' impute_MQ <- impute_y(model_formula,
-#'                    data_sample,
-#'                    data_out_of_sample,
-#'                    method = "MQ",
-#'                    type_model = "continuous")
+#'                       data_sample,
+#'                       data_out_of_sample,
+#'                       method = "MQ",
+#'                       type_model = "continuous")
 #'
 #' impute_RF <- impute_y(model_formula,
-#'                    data_sample,
-#'                    data_out_of_sample,
-#'                    method = "RF",
-#'                    tune_RF = TRUE,
-#'                    xgboost_params = list(CV_XGB = TRUE,
-#'                                          nfolds = 5,
-#'                                          nrounds = 50))
+#'                       data_sample,
+#'                       data_out_of_sample,
+#'                       method = "RF",
+#'                       tune_RF = TRUE,
+#'                       xgboost_params = list(CV_XGB = TRUE,
+#'                                             nfolds = 5,
+#'                                             nrounds = 50))
 #'
 #' impute_XGB <- impute_y(model_formula,
-#'                    data_sample,
-#'                    data_out_of_sample,
-#'                    method = "XGB",
-#'                    xgboost_params = list(CV_XGB = TRUE,
-#'                                          nfolds = 5,
-#'                                          nrounds = 50))
+#'                        data_sample,
+#'                        data_out_of_sample,
+#'                        method = "XGB",
+#'                        xgboost_params = list(CV_XGB = TRUE,
+#'                                              nfolds = 5,
+#'                                              nrounds = 50))
 #'
 #'
 
@@ -291,7 +292,6 @@ imputation_y.RF <- function(obj_imputation_y,
   y_hat_out_of_sample <- unname(unlist(predict(outcome_fit,
                                                newdata = X_newdata)))
 
-  #y_hat_sample <- unname(unlist(predict(outcome_fit, newdata = X)))
   y_hat_sample <- c(outcome_fit$predictions)
 
   output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
@@ -330,7 +330,6 @@ imputation_y.XGB <- function(obj_imputation_y,
   nfolds = xgboost_params$nfolds
   nrounds = xgboost_params$nrounds
 
-  #clusters  = as.numeric(data_sample$group)
   if (CV_XGB) {
 
     xgboost_cv <- xgb.cv(data = X, label = Y,

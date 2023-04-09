@@ -16,7 +16,7 @@ calculate_tau(populations, type_tau = c("HT", "H", "AIPW"))
 List with causal effects across sub-populations.
 }
 \description{
-This function calculates causal sub-population effect tau.
+This function calculates causal subpopulation effect tau.
 }
 \examples{
 
@@ -33,7 +33,6 @@ X <- generate_X(
  cov_type = "unif",
  seed = 1
 )
-
 
 X_outcome <- generate_X(
  n = N,

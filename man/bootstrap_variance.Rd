@@ -20,7 +20,7 @@ bootstrap_variance(
 
 \item{params_p_score}{List with parameters to fit propensity score:
 \itemize{
-\item model_formula - model formula,
+\item model_formula
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
@@ -31,7 +31,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 
 \item{params_impute_y}{List with parameters to fit imputation model:
 \itemize{
-\item model_formula - model formula,
+\item model_formula
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,

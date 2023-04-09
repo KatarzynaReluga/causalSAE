@@ -47,7 +47,6 @@ X <- generate_X(
  seed = 1
 )
 
-
 X_outcome <- generate_X(
  n = N,
  p = 1,

@@ -39,7 +39,6 @@ predict.mquantfit <- function(object, newdata = object$data,
   }
 
   predict_outcome <- unname(unlist(lapply(list_coef, predict_one_q, newdata, regression_type)))
-#  names(predict_outcome) <- paste0("q_", (object$coefficients)[,1])
 
   return(predict_outcome)
 

@@ -95,33 +95,33 @@ data_out_of_sample <- populations[-index_sample, ]
 model_formula = y ~ X1 + Xo1 + A + (1 + A||group)
 
 impute_EBLUP <- impute_y(model_formula,
-                   data_sample,
-                   data_out_of_sample,
-                   method = "EBLUP",
-                   type_model = "gaussian")
+                         data_sample,
+                         data_out_of_sample,
+                         method = "EBLUP",
+                         type_model = "gaussian")
 
 impute_MQ <- impute_y(model_formula,
-                   data_sample,
-                   data_out_of_sample,
-                   method = "MQ",
-                   type_model = "continuous")
+                      data_sample,
+                      data_out_of_sample,
+                      method = "MQ",
+                      type_model = "continuous")
 
 impute_RF <- impute_y(model_formula,
-                   data_sample,
-                   data_out_of_sample,
-                   method = "RF",
-                   tune_RF = TRUE,
-                   xgboost_params = list(CV_XGB = TRUE,
-                                         nfolds = 5,
-                                         nrounds = 50))
+                      data_sample,
+                      data_out_of_sample,
+                      method = "RF",
+                      tune_RF = TRUE,
+                      xgboost_params = list(CV_XGB = TRUE,
+                                            nfolds = 5,
+                                            nrounds = 50))
 
 impute_XGB <- impute_y(model_formula,
-                   data_sample,
-                   data_out_of_sample,
-                   method = "XGB",
-                   xgboost_params = list(CV_XGB = TRUE,
-                                         nfolds = 5,
-                                         nrounds = 50))
+                       data_sample,
+                       data_out_of_sample,
+                       method = "XGB",
+                       xgboost_params = list(CV_XGB = TRUE,
+                                             nfolds = 5,
+                                             nrounds = 50))
 
 
 }

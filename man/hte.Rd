@@ -32,7 +32,7 @@ hte(
 
 \item{params_p_score}{List with parameters to fit propensity score:
 \itemize{
-\item model_formula - model formula,
+\item model_formula
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
@@ -55,7 +55,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 
 \item{params_impute_y}{List with parameters to fit imputation model:
 \itemize{
-\item model_formula - model formula,
+\item model_formula
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
@@ -122,19 +122,34 @@ data_sample <- data.frame(samples[[1]]$samp_data)
 index_sample <- samples[[1]]$index_s
 data_out_of_sample <- populations[-index_sample, ]
 
-model_formula_OR = y ~ X1 + Xo1 + (1|group)
-
 
 hte_OR <- hte(type_hte = "OR",
               data_sample,
               data_out_of_sample,
               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
                                method = "EBLUP",
+                               type_model = "gaussian"))
+
+hte_NIPW <- hte(type_hte = "NIPW",
+              data_sample,
+              data_out_of_sample,
+              params_impute_y = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
+                               method = "EBLUP",
                                type_model = "gaussian"),
-              params_bootstrap  = list(boot_var = TRUE,
-                                       n_boot = 250,
-                                       boot_seed = 10,
-                                       type_boot = "both"))
+              params_p_score =  list(model_formula = A ~ X1 + Xo1 + (1|group),
+                               method = "EBLUP"))
+
+hte_AIPW <- hte(type_hte = "AIPW",
+              data_sample,
+              data_out_of_sample,
+              params_impute_y = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
+                               method = "EBLUP",
+                               type_model = "gaussian"),
+              params_p_score =  list(model_formula = A ~ X1 + Xo1 + (1|group),
+                               method = "EBLUP"),
+               params_OR = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
+               method = "MQ",
+               type_model = "continuous"))
 
 
 
