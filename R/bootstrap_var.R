@@ -109,9 +109,8 @@ bootstrap_variance <- function(obj_hte,
 
   tau_boot = matrix(0, nrow = n_boot, ncol = length(estimated_tau))
 
-#  a = Sys.time()
   for (i in 1 : n_boot) {
-    #print(i)
+
     # Modulus operation
     if(i %% 10 == 0) {
       # Print on the screen some message
@@ -140,9 +139,8 @@ bootstrap_variance <- function(obj_hte,
                                   params_impute_y = params_impute_y,
                                   params_OR = params_OR)$tau
 
-
   }
-#  b = Sys.time()
+
   var_tau <- colMeans((tau_boot - estimated_tau) ^ 2)
   return(var_tau)
 
@@ -179,7 +177,6 @@ bootstrap_variance <- function(obj_hte,
 #'  cov_type = "unif",
 #'  seed = 1
 #' )
-#'
 #'
 #' X_outcome <- generate_X(
 #'  n = N,
@@ -258,7 +255,7 @@ boot_indices_internal <- function(...)
   UseMethod("boot_indices_internal")
 
 #'
-#' @describeIn boot_indices_internal Obtain bootstrap indices bootstrapping withing the sample
+#' @describeIn boot_indices_internal Obtain bootstrap indices bootstrapping within the sample
 #' @export
 #'
 
@@ -286,7 +283,7 @@ boot_indices_internal.sample <- function(obj_boot,
 
 
 #'
-#' @describeIn boot_indices_internal Obtain bootstrap indices bootstrapping withing the sample
+#' @describeIn boot_indices_internal Obtain bootstrap indices bootstrapping within the sample
 #' @export
 #'
 
@@ -331,7 +328,7 @@ sample_indices <- function(sample_sizes,
                            swr = TRUE,
                            seed = 10) {
 
-  #
+  # Set seed
   set.seed(seed)
 
   # Cumulative sum

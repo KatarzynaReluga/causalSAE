@@ -124,7 +124,6 @@ get_X.norm <- function(cov_type,
 #' @export
 #'
 
-
 get_X.lognorm <- function(cov_type,
                           n,
                           p,

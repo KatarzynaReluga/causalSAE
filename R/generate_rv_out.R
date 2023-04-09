@@ -79,8 +79,6 @@ generate_re <- function(n,
   return(re)
 }
 
-
-
 #'
 #' Default parameters to generate random effects
 #'

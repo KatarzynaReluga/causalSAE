@@ -7,7 +7,7 @@
 #' \code{NIPW}, \code{AIPW}.
 #' @param params_p_score List with parameters to fit propensity score:
 #'  \itemize{
-#'  \item model_formula - model formula,
+#'  \item model_formula
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
@@ -17,7 +17,7 @@
 #'  }
 #' @param params_impute_y List with parameters to fit imputation model:
 #'  \itemize{
-#'  \item model_formula - model formula,
+#'  \item model_formula
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
@@ -95,8 +95,6 @@
 #' data_sample <- data.frame(samples[[1]]$samp_data)
 #' index_sample <- samples[[1]]$index_s
 #' data_out_of_sample <- populations[-index_sample, ]
-#'
-#' model_formula_OR = y ~ X1 + Xo1 + (1|group)
 #'
 #'
 #' hte_OR <- hte(type_hte = "OR",
@@ -225,10 +223,6 @@ estimate_hte.OR <- function(obj_hte,
 
   data_OR <- fit_OR(obj_hte, params_OR)
 
-#  data_OR <- fit_OR$data_OR
-#  fit0 <- fit_OR$fit0
-#  fit1 <- fit_OR$fit1
-
   tau_treat = aggregate(data_OR$mu1_y, list(data_OR$group), FUN = mean)$x
   tau_untreat = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
   tau = tau_treat - tau_untreat
@@ -237,10 +231,6 @@ estimate_hte.OR <- function(obj_hte,
                          tau_untreat = tau_untreat,
                          tau = tau,
                          group_name = unique(data_OR$group))
-
-#  output <- list(data_tau = data_tau,
-#                 m1_y = data_OR$mu1_y,
-#                 m0_y = data_OR$mu0_y)
 
   return(data_tau)
 
@@ -272,7 +262,6 @@ estimate_hte.IPW <- function(obj_hte,
 #' @describeIn estimate_hte Estimate heterogeneous treatment effects using NIPW
 #' @export
 #'
-
 
 estimate_hte.NIPW <- function(obj_hte,
                              params_p_score,

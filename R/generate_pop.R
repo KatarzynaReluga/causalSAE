@@ -68,7 +68,6 @@
 #'  seed = 1
 #' )
 #'
-#'
 #' X_outcome <- generate_X(
 #'  n = N,
 #'  p = 1,
@@ -90,7 +89,6 @@
 #' no_sim = 1,
 #' seed = 1)
 #'
-
 
 generate_pop <- function(X = matrix(),
                          X_outcome = NULL,
@@ -266,8 +264,6 @@ generate_pop <- function(X = matrix(),
 
 }
 
-
-
 #' Generate one population
 #'
 #' This is a generic function to generate outcome variables
@@ -345,13 +341,6 @@ gen_outcome.continuous <- function(regression_obj,
   y1 = fx + coef_A_repeat * 1 + re_repeat + e
   y0 = fx + coef_A_repeat * 0 + re_repeat + e
 
-
-
-#  y = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat + e
-#  y1 = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat + e
-#  y0 = coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat + e
-
-
   output <- list(y = y,
                  y1 = y1,
                  y0 = y0)
@@ -404,9 +393,6 @@ gen_outcome.binary <- function(regression_obj,
   class(fct_obj) <- fct_coef
   fx <- fct_form(fct_obj)
   #y --------------------------------
-#  exp_outcome = exp(
-#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat
-#  )
     exp_outcome = exp(
       fx + coef_A_repeat * A + re_repeat
     )
@@ -423,9 +409,6 @@ gen_outcome.binary <- function(regression_obj,
     fx + coef_A_repeat * 1 + re_repeat
   )
 
-#  exp_outcome1 = exp(
-#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat
-#  )
   p_outcome1 = exp_outcome1 * (1 + exp_outcome1) ^ (-1)
   y1  <- generate_binary(
     n = length(Xreg_outcome),
@@ -435,9 +418,6 @@ gen_outcome.binary <- function(regression_obj,
     seed = seed
   )
   #y0 ------------------------------------------
-  #  exp_outcome0 = exp(
-  #    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat
-  #  )
   exp_outcome0 = exp(
     fx + coef_A_repeat * 0 + re_repeat
   )
@@ -456,8 +436,6 @@ gen_outcome.binary <- function(regression_obj,
                  y0 = y0)
 
   return(output)
-#  return(y)
-
 }
 
 #'
@@ -504,10 +482,6 @@ gen_outcome.poisson <- function(regression_obj,
   fx <- fct_form(fct_obj)
 
   #y -------------------------
-#  exp_outcome = exp(
-#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * A + re_repeat
-#  )
-
   exp_outcome = exp(
     fx + coef_A_repeat * A + re_repeat
   )
@@ -522,9 +496,6 @@ gen_outcome.poisson <- function(regression_obj,
   )
 
   #y1 ---------------------
-#  exp_outcome1 = exp(
-#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 1 + re_repeat
-#  )
   exp_outcome1 = exp(
     fx + coef_A_repeat * 1 + re_repeat
   )
@@ -538,9 +509,6 @@ gen_outcome.poisson <- function(regression_obj,
   )
 
   #y0 ---------------------------
-#  exp_outcome0 = exp(
-#    coeffs$intercept_outcome + Xreg_outcome + coef_A_repeat * 0 + re_repeat
-#  )
   exp_outcome0 = exp(
     fx + coef_A_repeat * 0 + re_repeat
   )
@@ -707,8 +675,6 @@ check_rand_eff <- function(rand_eff) {
   }
 
 }
-
-
 
 #'
 #' Get default coefficients

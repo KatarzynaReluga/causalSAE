@@ -1,6 +1,6 @@
 #' Calculate causal effect
 #'
-#' This function calculates causal sub-population effect tau.
+#' This function calculates causal subpopulation effect tau.
 #'
 #' @param populations List with one or several populations
 #' @param type_tau Type of computation, \code{HT}: Horvitz–Thompson-type estimator,
@@ -29,7 +29,6 @@
 #'  cov_type = "unif",
 #'  seed = 1
 #' )
-#'
 #'
 #' X_outcome <- generate_X(
 #'  n = N,

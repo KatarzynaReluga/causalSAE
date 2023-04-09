@@ -1,22 +1,13 @@
 # rm(list=ls())
 # .rs.restartR()
-#
-#
 
 setwd("./causalSAE")
 devtools::load_all()
-
-#aaa <- Sys.time()
 
 m = 25
 Nii = 1000
 Ni = rep(Nii, m)
 N = sum(Ni)
-
-#ni = rep(10, m)
-#n = sum(ni)
-
-# Exp works but it needs to have small coef
 
 var_norm <- matrix(c(1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
                      0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
@@ -122,12 +113,7 @@ frac_nc0 <- c(runif(3 * m/5, 0.06, 0.5), runif(2 * m/5, 0.51, 1))
 nc <- ceiling(frac_nc0 * nt)
 frac_nc <- nc/Nc
 
-#bbb <- Sys.time()
-
 a = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-# Simple checks of the code ------------------------------------------------------------------
-#for (i in 1:NoSim) {
-#ccc  = Sys.time()
 
 set.seed(a * 2022)
 subpopulation <- sample_subpopulations(populations,
@@ -141,9 +127,6 @@ nc = as.numeric(table(data_sample$group[data_sample$A == 0]))
 nt = as.numeric(table(data_sample$group[data_sample$A == 1]))
 frac_nN <- dim(data_sample)[1]/dim(populations)[1]
 
-#nc
-#nt
-#frac_nN
 #######################################################################################################
 ######
 # OR #
@@ -1357,11 +1340,6 @@ Results = list(ni = ni,
 
                Dir_tau = Dir_tau)
 
-#ddd <- Sys.time()
-
 outputName = paste("DB25t_", a, ".RData", sep = "")
 outputPath = file.path("/home/reluga/Comp", outputName)
-#outputPath = file.path("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE",outputName)
 save("Results", file = outputPath)
-
-#c = Sys.time()
