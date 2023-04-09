@@ -291,7 +291,8 @@ imputation_y.RF <- function(obj_imputation_y,
   y_hat_out_of_sample <- unname(unlist(predict(outcome_fit,
                                                newdata = X_newdata)))
 
-  y_hat_sample <- unname(unlist(predict(outcome_fit, newdata = X)))
+  #y_hat_sample <- unname(unlist(predict(outcome_fit, newdata = X)))
+  y_hat_sample <- c(outcome_fit$predictions)
 
   output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
                  y_hat_sample = y_hat_sample,

@@ -170,13 +170,15 @@ Method <- c(rep("E", 41),
             rep("M", 41),
             rep("R", 41),
             rep("X", 41),
-            rep("Rt", 41),
-            rep("Xt", 41))
+            rep("tR", 41),
+            rep("tX", 41))
 
 tau <- c(tau_trueE, tau_trueM,
          tau_trueR, tau_trueX,
          tau_trueRt, tau_trueXt)
 
+Region = namesProvRegs$Region
+Province = namesProvRegs$Province
 dftr <- data.frame(tau_trueE, Region, Province)
 
 dfL <- dftr[dftr$Region == "L", ]
@@ -202,9 +204,14 @@ ProvSort <- c(dfLsort$Province, dfTsort$Province,
               dfUsort$Province, dfMsort$Province,
               dfCsort$Province, dfSsort$Province)
 
+ProvSortAbb <- ProvSort
+ProvSortAbb[16] <- "Mas.-Car."
+ProvSortAbb[24] <- "Pes.-Urb."
+ProvSortAbb[26] <- "Asc.-Pic."
+ProvSortAbb[38] <- "Caltanis."
 
-
-
+ProvSortPlot <- data.frame(ProvSort, ProvSortAbb)
+save(ProvSortPlot, file = "ProvSortPlot.RData")
 #C  L  M  S  T  U
 #5 11  4  9 10  2
 regionGeo <- numeric(41)
@@ -240,15 +247,15 @@ values = c("L" ="#66C2A5",
                                 "R"="#8DA0CB",
                                 "X" = "#E78AC3",
                                 "Rt" = "#A6D854",
-                                "Xt" = "#FFD92F"))+
+                                "Xt" = "#FFD92F")
 
 gDB <- ggplot(dfM, aes(x = subpopulation,
                        y = tau,
                        col = region)) +
   labs(y = "ATE", x = "Province")+
-  geom_point(aes(shape = Method), size = 3) + theme_bw() + coord_cartesian(ylim=c(-0.75, 1.8)) +
-  scale_y_continuous(breaks = seq(-1,1.5,0.5)) +
-  scale_x_discrete(limits = ProvSort)+
+  geom_point(aes(shape = Method), size = 3) + theme_bw() + coord_cartesian(ylim=c(-0.9, 2)) +
+  scale_y_continuous(breaks = seq(-1,2,0.5)) +
+  scale_x_discrete(limits = ProvSortAbb)+
   scale_color_manual(name = " Region",
                      values = c("L" ="#66C2A5",
                                 "T"="#FC8D62",
@@ -261,10 +268,10 @@ gDB <- ggplot(dfM, aes(x = subpopulation,
                                 "M"= 16,
                                 "R"= 17,
                                 "X" = 15,
-                                "Rt" = 2,
-                                "Xt" = 0))+
+                                "tR" = 2,
+                                "tX" = 0))+
   theme(legend.direction = "horizontal",
-        legend.position = c(0.5, 0.9),
+        legend.position = c(0.5, 0.91),
         legend.box = "horizontal",
         axis.text=element_text(size=12),
         axis.title=element_text(size=14,face="bold"),

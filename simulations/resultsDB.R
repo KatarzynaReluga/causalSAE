@@ -1,7 +1,4 @@
-#setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/Mplustune25_2")
-#setwd("C:/Users/katar/Documents/GitHub/causalSAE/simulations/results/ModelBased/PositiveEffects/Tuned/Mplustune100_2")
-setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/DesignBased/BadSetup/dbE")
-setwd("C:/Users/katar/Documents/Kasia/4_PostDoc/rok_2022_2023/simultaions_causalSAE/results/ModelBased/DBscenarios/DB25t")
+setwd("./results/ModelBased/DBscenarios/DB25t")
 library("RColorBrewer")
 
 library(data.table)
@@ -210,7 +207,7 @@ RMSEPMedian50F <- MPlus50F$RMSEPMedian
 RMSEPMediansort50F <- sort(RMSEPMedian50F, index.return = TRUE)$x
 RMSEPMediansorti50F <- sort(RMSEPMedian50F, index.return = TRUE)$ix
 Methods[RMSEPMediansorti50F]
-Methods[ARBPMediansorti50F][1:10]
+Methods[RMSEPMediansorti50F][1:10]
 plot(density(RMSEPMedian50F))
 plot(1:127, RMSEPMedian50F)
 plot(1:126, RMSEPMedian50F[-127], ylim = c(20,40))

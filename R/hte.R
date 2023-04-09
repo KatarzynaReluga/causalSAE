@@ -104,11 +104,28 @@
 #'               data_out_of_sample,
 #'               params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
 #'                                method = "EBLUP",
+#'                                type_model = "gaussian"))
+#'
+#' hte_NIPW <- hte(type_hte = "NIPW",
+#'               data_sample,
+#'               data_out_of_sample,
+#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
+#'                                method = "EBLUP",
 #'                                type_model = "gaussian"),
-#'               params_bootstrap  = list(boot_var = TRUE,
-#'                                        n_boot = 250,
-#'                                        boot_seed = 10,
-#'                                        type_boot = "both"))
+#'               params_p_score =  list(model_formula = A ~ X1 + Xo1 + (1|group),
+#'                                method = "EBLUP"))
+#'
+#' hte_AIPW <- hte(type_hte = "AIPW",
+#'               data_sample,
+#'               data_out_of_sample,
+#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
+#'                                method = "EBLUP",
+#'                                type_model = "gaussian"),
+#'               params_p_score =  list(model_formula = A ~ X1 + Xo1 + (1|group),
+#'                                method = "EBLUP"),
+#'                params_OR = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
+#'                method = "MQ",
+#'                type_model = "continuous"))
 #'
 #'
 #'
