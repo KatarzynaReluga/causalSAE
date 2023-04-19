@@ -4,7 +4,7 @@
 \alias{fit_OR}
 \title{Fit outcome regression models}
 \usage{
-fit_OR(obj_hte, params_OR)
+fit_OR(obj_hte, params_OR, params_bootstrap)
 }
 \arguments{
 \item{obj_hte}{Object to estimate hte}
@@ -19,6 +19,13 @@ fit_OR(obj_hte, params_OR)
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
 \item type_model - type of outcome.
+}}
+
+\item{params_bootstrap}{List with parameters to obtain bootstrap variance:
+\itemize{
+\item boot_var = FALSE,
+\item n_boot = 500,
+\item boot_seed = 10,
 }}
 }
 \value{

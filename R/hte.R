@@ -7,7 +7,7 @@
 #' \code{NIPW}, \code{AIPW}.
 #' @param params_p_score List with parameters to fit propensity score:
 #'  \itemize{
-#'  \item model_formula
+#'  \item model_formula - model formula,
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
@@ -17,7 +17,7 @@
 #'  }
 #' @param params_impute_y List with parameters to fit imputation model:
 #'  \itemize{
-#'  \item model_formula
+#'  \item model_formula - model formula,
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
@@ -96,6 +96,8 @@
 #' index_sample <- samples[[1]]$index_s
 #' data_out_of_sample <- populations[-index_sample, ]
 #'
+#' model_formula_OR = y ~ X1 + Xo1 + (1|group)
+#'
 #'
 #' hte_OR <- hte(type_hte = "OR",
 #'               data_sample,
@@ -104,82 +106,68 @@
 #'                                method = "EBLUP",
 #'                                type_model = "gaussian"))
 #'
-#' hte_NIPW <- hte(type_hte = "NIPW",
-#'               data_sample,
-#'               data_out_of_sample,
-#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
-#'                                method = "EBLUP",
-#'                                type_model = "gaussian"),
-#'               params_p_score =  list(model_formula = A ~ X1 + Xo1 + (1|group),
-#'                                method = "EBLUP"))
-#'
-#' hte_AIPW <- hte(type_hte = "AIPW",
-#'               data_sample,
-#'               data_out_of_sample,
-#'               params_impute_y = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
-#'                                method = "EBLUP",
-#'                                type_model = "gaussian"),
-#'               params_p_score =  list(model_formula = A ~ X1 + Xo1 + (1|group),
-#'                                method = "EBLUP"),
-#'                params_OR = list(model_formula = y ~ X1 + Xo1 + (1 + A||group),
-#'                method = "MQ",
-#'                type_model = "continuous"))
-#'
 #'
 #'
 hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                 data_sample,
                 data_out_of_sample,
-                params_p_score = list(model_formula = A ~ X1 + (1|group),
-                                      method = "EBLUP",
-                                      tune_RF = FALSE,
-                                      xgboost_params = list(CV_XGB = TRUE,
-                                                            nfolds = 5,
-                                                            nrounds = 50)),
-                params_OR = list(model_formula = y ~ X1 + Xo1 + (1|group),
-                                 method = "EBLUP",
-                                 tune_RF = FALSE,
-                                 xgboost_params = list(CV_XGB = TRUE,
-                                                       nfolds = 5,
-                                                       nrounds = 50),
-                                 type_model = "gaussian"),
-                params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A||group),
-                                       method = "EBLUP",
-                                       tune_RF = FALSE,
-                                       xgboost_params = list(CV_XGB = TRUE,
-                                                             nfolds = 5,
-                                                             nrounds = 50),
-                                       type_model = "gaussian"),
-                params_bootstrap  = list(boot_var = FALSE,
-                                         n_boot = 500,
-                                         boot_seed = 10,
-                                         type_boot = "both"),
+                params_p_score = list(
+                  model_formula = A ~ X1 + (1 | group),
+                  method = "EBLUP",
+                  tune_RF = FALSE,
+                  xgboost_params = list(
+                    CV_XGB = TRUE,
+                    nfolds = 5,
+                    nrounds = 50
+                  )
+                ),
+                params_OR = list(
+                  model_formula = y ~ X1 + Xo1 + (1 | group),
+                  method = "EBLUP",
+                  tune_RF = FALSE,
+                  xgboost_params = list(
+                    CV_XGB = TRUE,
+                    nfolds = 5,
+                    nrounds = 50
+                  ),
+                  type_model = "gaussian"
+                ),
+                params_impute_y = list(
+                  model_formula = y ~ X1 + Xo1 + A + (1 + A || group),
+                  method = "EBLUP",
+                  tune_RF = FALSE,
+                  xgboost_params = list(
+                    CV_XGB = TRUE,
+                    nfolds = 5,
+                    nrounds = 50
+                  ),
+                  type_model = "gaussian"
+                ),
+                params_bootstrap  = list(
+                  boot_var = FALSE,
+                  n_boot = 250,
+                  boot_seed = 10,
+                  type_boot = "br1",
+                  method_scale = "sd",
+                  method_center = "mean"
+                ),
                 estimated_p_score = NULL,
                 ...) {
-
   type_hte <- match.arg(type_hte)
   obj_hte <- list(data_sample = data_sample,
                   data_out_of_sample = data_out_of_sample)
   class(obj_hte) <- type_hte
 
   # Estimate heterogenous treatment effects ---------------
-  estimate_hte <- estimate_hte(obj_hte = obj_hte,
-                               params_p_score = params_p_score,
-                               params_impute_y = params_impute_y,
-                               params_OR = params_OR,
-                               estimated_p_score = estimated_p_score)
+  estimate_hte <- estimate_hte(
+    obj_hte = obj_hte,
+    params_p_score = params_p_score,
+    params_impute_y = params_impute_y,
+    params_OR = params_OR,
+    estimated_p_score = estimated_p_score,
+    params_bootstrap = params_bootstrap
+  )
 
-  if (params_bootstrap$boot_var) {
-    boot_var <- bootstrap_variance(obj_hte = obj_hte,
-                                   params_p_score = params_p_score,
-                                   params_impute_y = params_impute_y,
-                                   params_OR = params_OR,
-                                   n_boot = params_bootstrap$n_boot,
-                                   estimated_tau = estimate_hte$tau,
-                                   seed = params_bootstrap$boot_seed,
-                                   type_boot = params_bootstrap$type_boot)
-    estimate_hte$var_tau <- boot_var
-  }
 
   return(estimate_hte)
 
@@ -218,23 +206,50 @@ estimate_hte <- function(...)
 
 estimate_hte.OR <- function(obj_hte,
                             params_OR,
+                            params_bootstrap,
                             ...) {
+  fitted_OR <- fit_OR(obj_hte, params_OR, params_bootstrap)
 
+  #  data_OR <- fit_OR$data_OR
+  #  fit0 <- fit_OR$fit0
+  #  fit1 <- fit_OR$fit1
 
-  data_OR <- fit_OR(obj_hte, params_OR)
+  data_OR <- fitted_OR$data_OR
 
   tau_treat = aggregate(data_OR$mu1_y, list(data_OR$group), FUN = mean)$x
   tau_untreat = aggregate(data_OR$mu0_y, list(data_OR$group), FUN = mean)$x
   tau = tau_treat - tau_untreat
 
-  data_tau <- data.frame(tau_treat = tau_treat,
-                         tau_untreat = tau_untreat,
-                         tau = tau,
-                         group_name = unique(data_OR$group))
+  tau_data <- data.frame(
+    tau_treat = tau_treat,
+    tau_untreat = tau_untreat,
+    tau = tau,
+    group_name = unique(data_OR$group)
+  )
 
-  return(data_tau)
+
+  if (params_bootstrap$boot_var) {
+    tau_boot <- matrix(0, nrow = params_bootstrap$n_boot,
+                       ncol = length(tau))
+
+    for (i in 1:params_bootstrap$n_boot) {
+      data_ORb <- fitted_OR$data_ORb[[i]]
+
+      tau_treatb = aggregate(data_ORb$mu1_y, list(data_ORb$group), FUN = mean)$x
+      tau_untreatb = aggregate(data_ORb$mu0_y, list(data_ORb$group), FUN = mean)$x
+      tau_boot[i,] = tau_treatb - tau_untreatb
+
+    }
+
+    var_tau <- colMeans((tau_boot - tau) ^ 2)
+    tau_data$var_tau <- var_tau
 
   }
+
+
+  return(tau_data)
+
+}
 
 #'
 #' @describeIn estimate_hte Estimate heterogeneous treatment effects using IPW
@@ -246,15 +261,37 @@ estimate_hte.IPW <- function(obj_hte,
                              params_p_score,
                              params_impute_y,
                              estimated_p_score,
+                             params_bootstrap,
                              ...) {
   # Obtain IPW data  -------------------------------
-  IPW_data <- obtain_IPW_data(obj_hte,
+  IPW_data_fit <- obtain_IPW_data(obj_hte,
                               params_p_score,
                               params_impute_y,
-                              estimated_p_score)
+                              estimated_p_score,
+                              params_bootstrap)
 
+  IPW_data <- IPW_data_fit$IPW_data
   # Estimate parameters ----------------------------------------------
-  tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "HT"))
+  tau_data <-
+    as.data.frame(calculate_tau(IPW_data, type_tau = "HT"))
+
+  if (params_bootstrap$boot_var) {
+    tau_boot <- matrix(0, nrow = params_bootstrap$n_boot,
+                       ncol = length(tau_data$tau))
+
+    for (i in 1:params_bootstrap$n_boot) {
+      IPW_datab <- IPW_data_fit$IPW_datab[[i]]
+
+      tau_boot[i,] =  calculate_tau(IPW_datab, type_tau = "HT")[[1]]$tau
+
+    }
+
+    var_tau <- colMeans((tau_boot - tau_data$tau) ^ 2)
+    tau_data$var_tau <- var_tau
+
+  }
+
+
   return(tau_data)
 }
 
@@ -263,20 +300,40 @@ estimate_hte.IPW <- function(obj_hte,
 #' @export
 #'
 
+
 estimate_hte.NIPW <- function(obj_hte,
-                             params_p_score,
-                             params_impute_y,
-                             estimated_p_score,
-                             ...) {
-
-
-  # Obtain IPW data  -------------------------------
-  IPW_data <- obtain_IPW_data(obj_hte,
                               params_p_score,
                               params_impute_y,
-                              estimated_p_score)
+                              estimated_p_score,
+                              params_bootstrap,
+                              ...) {
+  # Obtain IPW data  -------------------------------
+  IPW_data_fit <- obtain_IPW_data(obj_hte,
+                              params_p_score,
+                              params_impute_y,
+                              estimated_p_score,
+                              params_bootstrap)
+
+  IPW_data <- IPW_data_fit$IPW_data
 
   tau_data <- as.data.frame(calculate_tau(IPW_data, type_tau = "H"))
+
+  if (params_bootstrap$boot_var) {
+    tau_boot <- matrix(0, nrow = params_bootstrap$n_boot,
+                       ncol = length(tau_data$tau))
+
+    for (i in 1:params_bootstrap$n_boot) {
+      IPW_datab <- IPW_data_fit$IPW_datab[[i]]
+
+      tau_boot[i,] =  calculate_tau(IPW_datab, type_tau = "H")[[1]]$tau
+
+    }
+
+    var_tau <- colMeans((tau_boot - tau_data$tau) ^ 2)
+    tau_data$var_tau <- var_tau
+
+  }
+
   return(tau_data)
 }
 
@@ -292,27 +349,51 @@ estimate_hte.AIPW <- function(obj_hte,
                               params_impute_y,
                               params_OR,
                               estimated_p_score,
+                              params_bootstrap,
                               ...) {
-
-
   if (params_OR$method == params_impute_y$method) {
-    stop("In AIPW, the method to impute outcomes cannot be the same as the method for fitting outcome regression model. Choose another estimation method.")
+    stop(
+      "In AIPW, the method to impute outcomes cannot be the same as the method for fitting outcome regression model. Choose another estimation method."
+    )
   }
 
   # Obtain IPW data ----------------------------------------------
-  IPW_data <- obtain_IPW_data(obj_hte,
+  IPW_data_fit <- obtain_IPW_data(obj_hte,
                               params_p_score,
                               params_impute_y,
-                              estimated_p_score)
+                              estimated_p_score,
+                              params_bootstrap)
   # Obtain outcome regression data -----------------------------------------
-  data_OR <- fit_OR(obj_hte, params_OR)
+  fitted_OR <- fit_OR(obj_hte, params_OR, params_bootstrap)
+  data_OR <- fitted_OR$data_OR
 
-  AIPW_data <- IPW_data
+  AIPW_data <- IPW_data_fit$IPW_data
   AIPW_data$mu0_y <- data_OR$mu0_y
   AIPW_data$mu1_y <- data_OR$mu1_y
 
 
-  tau_data <- as.data.frame(calculate_tau(AIPW_data, type_tau = "AIPW"))
+  tau_data <-
+    as.data.frame(calculate_tau(AIPW_data, type_tau = "AIPW"))
+
+  if (params_bootstrap$boot_var) {
+    tau_boot <- matrix(0, nrow = params_bootstrap$n_boot,
+                       ncol = length(tau_data$tau))
+
+    for (i in 1:params_bootstrap$n_boot) {
+
+      AIPW_datab <- IPW_data_fit$IPW_datab[[i]]
+      AIPW_datab$mu0_y <- fitted_OR$data_ORb[[i]]$mu0_y
+      AIPW_datab$mu1_y <- fitted_OR$data_ORb[[i]]$mu1_y
+
+      tau_boot[i,] =  calculate_tau(AIPW_datab, type_tau = "AIPW")[[1]]$tau
+
+    }
+
+    var_tau <- colMeans((tau_boot - tau_data$tau) ^ 2)
+    tau_data$var_tau <- var_tau
+
+  }
+
   return(tau_data)
 
 }
@@ -332,7 +413,8 @@ estimate_hte.AIPW <- function(obj_hte,
 obtain_IPW_data <- function(obj_hte,
                             params_p_score,
                             params_impute_y,
-                            estimated_p_score) {
+                            estimated_p_score,
+                            params_bootstrap) {
   # Pre-process data --------------------------------------------------
   data_sample = obj_hte$data_sample
   data_out_of_sample = obj_hte$data_out_of_sample
@@ -343,37 +425,69 @@ obtain_IPW_data <- function(obj_hte,
   if (!is.null(estimated_p_score)) {
     ps_hat = estimated_p_score
   } else {
-  # Propensity score estimation --------------------------------------
-  if (length(names_out_of_sample) == length(names_data_sample)) {
-    data_p_score <- rbind(data_sample, data_out_of_sample)
-  } else {
-    y <- data_sample$y
-    data_sample_p_score <- select(data_sample, -y)
-    data_p_score <- rbind(data_sample_p_score, data_out_of_sample)
-  }
-  obj_p_score <- list(data_p_score = data_p_score)
-  class(obj_p_score) <- params_p_score$method
+    # Propensity score estimation --------------------------------------
+    if (length(names_out_of_sample) == length(names_data_sample)) {
+      data_p_score <- rbind(data_sample, data_out_of_sample)
+    } else {
+      y <- data_sample$y
+      data_sample_p_score <- select(data_sample,-y)
+      data_p_score <- rbind(data_sample, data_out_of_sample)
+    }
+    obj_p_score <- list(data_p_score = data_p_score)
+    class(obj_p_score) <- params_p_score$method
 
-  ps_hat <- p_score(obj_p_score = obj_p_score,
-                    model_formula = params_p_score$model_formula,
-                    xgboost_params = params_p_score$xgboost_params,
-                    tune_RF = params_p_score$tune_RF)
+    ps_hat <- p_score(
+      obj_p_score = obj_p_score,
+      model_formula = params_p_score$model_formula,
+      xgboost_params = params_p_score$xgboost_params,
+      tune_RF = params_p_score$tune_RF
+    )
 
   }
   # Imputation -------------------------------------------------
-  imputed_y <- impute_y(model_formula = params_impute_y$model_formula,
-                        data_sample = data_sample,
-                        data_out_of_sample = data_out_of_sample,
-                        method = params_impute_y$method,
-                        type_model = params_impute_y$type_model,
-                        tune_RF = params_impute_y$tune_RF,
-                        xgboost_params = params_impute_y$xgboost_params)
+  imputed_y <-
+    impute_y(
+      model_formula = params_impute_y$model_formula,
+      data_sample = data_sample,
+      data_out_of_sample = data_out_of_sample,
+      method = params_impute_y$method,
+      type_model = params_impute_y$type_model,
+      tune_RF = params_impute_y$tune_RF,
+      xgboost_params = params_impute_y$xgboost_params,
+      params_bootstrap = params_bootstrap
+    )
 
   y_full_impute <- imputed_y$y_full_imputed
 
-  IPW_data <- data.frame(y = y_full_impute,
-                         A = c(data_sample$A, data_out_of_sample$A),
-                         group = c(data_sample$group, data_out_of_sample$group),
-                         p_score  = ps_hat)
-  return(IPW_data)
+  IPW_data <- data.frame(
+    y = y_full_impute,
+    A = c(data_sample$A, data_out_of_sample$A),
+    group = c(data_sample$group, data_out_of_sample$group),
+    p_score  = ps_hat
+  )
+
+  output <- list(IPW_data = IPW_data)
+
+  if (params_bootstrap$boot_var) {
+
+    y_hat_boot <- imputed_y$y_hat_boot
+
+    IPW_datab <- list()
+
+    for (i in 1:params_bootstrap$n_boot) {
+
+      y_full_imputeb <- y_hat_boot[[i]]$y_full_imputed
+
+      IPW_datab[[i]] <- data.frame(
+        y = y_full_imputeb,
+        A = c(data_sample$A, data_out_of_sample$A),
+        group = c(data_sample$group, data_out_of_sample$group),
+        p_score  = ps_hat
+      )
+
+    }
+
+    output$IPW_datab <- IPW_datab
+  }
+  return(output)
 }

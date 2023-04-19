@@ -12,6 +12,8 @@ impute_y(
   type_model = "gaussian",
   tune_RF = FALSE,
   xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50),
+  params_bootstrap = list(boot_var = FALSE, n_boot = 250, boot_seed = 10, type_boot =
+    "br1", method_scale = "mad", method_center = "median"),
   ...
 )
 }
@@ -33,6 +35,13 @@ impute_y(
 \item CV_XGB - logical variable, use cross-validation for gradient boosting? Default: TRUE.
 \item nfolds - number of folds in cross-validation, default: nfolds = 5.
 \item nrounds - the max number of iterations, default: nrounds = 50.
+}}
+
+\item{params_bootstrap}{List with parameters to obtain bootstrap variance:
+\itemize{
+\item boot_var = FALSE,
+\item n_boot = 500,
+\item boot_seed = 10,
 }}
 
 \item{...}{Additional parameters.}
@@ -95,33 +104,45 @@ data_out_of_sample <- populations[-index_sample, ]
 model_formula = y ~ X1 + Xo1 + A + (1 + A||group)
 
 impute_EBLUP <- impute_y(model_formula,
-                         data_sample,
-                         data_out_of_sample,
-                         method = "EBLUP",
-                         type_model = "gaussian")
+                   data_sample,
+                   data_out_of_sample,
+                   method = "EBLUP",
+                   type_model = "gaussian",
+                   params_bootstrap  = list(boot_var = FALSE,
+                               n_boot = 250,
+                               boot_seed = 10))
 
 impute_MQ <- impute_y(model_formula,
-                      data_sample,
-                      data_out_of_sample,
-                      method = "MQ",
-                      type_model = "continuous")
+                   data_sample,
+                   data_out_of_sample,
+                   method = "MQ",
+                   type_model = "continuous",
+                   params_bootstrap  = list(boot_var = FALSE,
+                               n_boot = 250,
+                               boot_seed = 10))
 
 impute_RF <- impute_y(model_formula,
-                      data_sample,
-                      data_out_of_sample,
-                      method = "RF",
-                      tune_RF = TRUE,
-                      xgboost_params = list(CV_XGB = TRUE,
-                                            nfolds = 5,
-                                            nrounds = 50))
+                   data_sample,
+                   data_out_of_sample,
+                   method = "RF",
+                   tune_RF = TRUE,
+                   xgboost_params = list(CV_XGB = TRUE,
+                                         nfolds = 5,
+                                         nrounds = 50),
+                   params_bootstrap  = list(boot_var = FALSE,
+                               n_boot = 250,
+                               boot_seed = 10))
 
 impute_XGB <- impute_y(model_formula,
-                       data_sample,
-                       data_out_of_sample,
-                       method = "XGB",
-                       xgboost_params = list(CV_XGB = TRUE,
-                                             nfolds = 5,
-                                             nrounds = 50))
+                   data_sample,
+                   data_out_of_sample,
+                   method = "XGB",
+                   xgboost_params = list(CV_XGB = TRUE,
+                                         nfolds = 5,
+                                         nrounds = 50),
+                   params_bootstrap  = list(boot_var = FALSE,
+                               n_boot = 250,
+                               boot_seed = 10))
 
 
 }

@@ -10,11 +10,25 @@
 \usage{
 estimate_hte(...)
 
-\method{estimate_hte}{OR}(obj_hte, params_OR, ...)
+\method{estimate_hte}{OR}(obj_hte, params_OR, params_bootstrap, ...)
 
-\method{estimate_hte}{IPW}(obj_hte, params_p_score, params_impute_y, estimated_p_score, ...)
+\method{estimate_hte}{IPW}(
+  obj_hte,
+  params_p_score,
+  params_impute_y,
+  estimated_p_score,
+  params_bootstrap,
+  ...
+)
 
-\method{estimate_hte}{NIPW}(obj_hte, params_p_score, params_impute_y, estimated_p_score, ...)
+\method{estimate_hte}{NIPW}(
+  obj_hte,
+  params_p_score,
+  params_impute_y,
+  estimated_p_score,
+  params_bootstrap,
+  ...
+)
 
 \method{estimate_hte}{AIPW}(
   obj_hte,
@@ -22,6 +36,7 @@ estimate_hte(...)
   params_impute_y,
   params_OR,
   estimated_p_score,
+  params_bootstrap,
   ...
 )
 }
@@ -42,9 +57,16 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item type_model - type of outcome.
 }}
 
+\item{params_bootstrap}{List with parameters to obtain bootstrap variance:
+\itemize{
+\item boot_var = FALSE,
+\item n_boot = 500,
+\item boot_seed = 10,
+}}
+
 \item{params_p_score}{List with parameters to fit propensity score:
 \itemize{
-\item model_formula
+\item model_formula - model formula,
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
@@ -55,7 +77,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 
 \item{params_impute_y}{List with parameters to fit imputation model:
 \itemize{
-\item model_formula
+\item model_formula - model formula,
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,

@@ -14,7 +14,12 @@
 #'  \item nfolds - number of folds in cross-validation, default: nfolds = 5.
 #'  \item nrounds - the max number of iterations, default: nrounds = 50.
 #' }
-#'
+#' @param params_bootstrap List with parameters to obtain bootstrap variance:
+#' \itemize{
+#'  \item boot_var = FALSE,
+#'  \item n_boot = 500,
+#'  \item boot_seed = 10,
+#' }
 #' @param ... Additional parameters.
 #'
 #' @export
@@ -74,33 +79,45 @@
 #' model_formula = y ~ X1 + Xo1 + A + (1 + A||group)
 #'
 #' impute_EBLUP <- impute_y(model_formula,
-#'                          data_sample,
-#'                          data_out_of_sample,
-#'                          method = "EBLUP",
-#'                          type_model = "gaussian")
+#'                    data_sample,
+#'                    data_out_of_sample,
+#'                    method = "EBLUP",
+#'                    type_model = "gaussian",
+#'                    params_bootstrap  = list(boot_var = FALSE,
+#'                                n_boot = 250,
+#'                                boot_seed = 10))
 #'
 #' impute_MQ <- impute_y(model_formula,
-#'                       data_sample,
-#'                       data_out_of_sample,
-#'                       method = "MQ",
-#'                       type_model = "continuous")
+#'                    data_sample,
+#'                    data_out_of_sample,
+#'                    method = "MQ",
+#'                    type_model = "continuous",
+#'                    params_bootstrap  = list(boot_var = FALSE,
+#'                                n_boot = 250,
+#'                                boot_seed = 10))
 #'
 #' impute_RF <- impute_y(model_formula,
-#'                       data_sample,
-#'                       data_out_of_sample,
-#'                       method = "RF",
-#'                       tune_RF = TRUE,
-#'                       xgboost_params = list(CV_XGB = TRUE,
-#'                                             nfolds = 5,
-#'                                             nrounds = 50))
+#'                    data_sample,
+#'                    data_out_of_sample,
+#'                    method = "RF",
+#'                    tune_RF = TRUE,
+#'                    xgboost_params = list(CV_XGB = TRUE,
+#'                                          nfolds = 5,
+#'                                          nrounds = 50),
+#'                    params_bootstrap  = list(boot_var = FALSE,
+#'                                n_boot = 250,
+#'                                boot_seed = 10))
 #'
 #' impute_XGB <- impute_y(model_formula,
-#'                        data_sample,
-#'                        data_out_of_sample,
-#'                        method = "XGB",
-#'                        xgboost_params = list(CV_XGB = TRUE,
-#'                                              nfolds = 5,
-#'                                              nrounds = 50))
+#'                    data_sample,
+#'                    data_out_of_sample,
+#'                    method = "XGB",
+#'                    xgboost_params = list(CV_XGB = TRUE,
+#'                                          nfolds = 5,
+#'                                          nrounds = 50),
+#'                    params_bootstrap  = list(boot_var = FALSE,
+#'                                n_boot = 250,
+#'                                boot_seed = 10))
 #'
 #'
 
@@ -114,10 +131,17 @@ impute_y <- function(model_formula,
                      xgboost_params = list(CV_XGB = TRUE,
                                            nfolds = 5,
                                            nrounds = 50),
+                     params_bootstrap  = list(boot_var = FALSE,
+                                              n_boot = 250,
+                                              boot_seed = 10,
+                                              type_boot = "br1",
+                                              method_scale = "mad",
+                                              method_center = "median"),
                      ...) {
 
   # Check and format data
   method <- match.arg(method)
+
   obj_imputation_y <- list(data_sample = data_sample,
                            data_out_of_sample = data_out_of_sample)
   class(obj_imputation_y) <- method
@@ -133,6 +157,48 @@ impute_y <- function(model_formula,
   y_hat$y_full_imputed <- y_full_imputed
   y_hat$group_sample <- data_sample$group
   y_hat$group_out_of_sample <- data_out_of_sample$group
+
+  if (params_bootstrap$boot_var) {
+
+
+    y_boot <- residual_bootstrap(y = data_sample$y,
+                       y_hat = y_hat$y_hat_sample,
+                       data_sample = data_sample,
+                       n_boot  = params_bootstrap$n_boot,
+                       type_boot = params_bootstrap$type_boot,
+                       method_scale = params_bootstrap$method_scale,
+                       method_center = params_bootstrap$method_center,
+                       boot_seed = params_bootstrap$boot_seed)
+
+    y_hat_boot <- list()
+
+    for (i in 1 : params_bootstrap$n_boot) {
+      #print(i)
+      # Modulus operation
+      if(i %% 10 == 0) {
+        # Print on the screen some message
+        cat(paste0("Bootstrap iteration: ", i, "\n"))
+      }
+      data_sample_b <- data_sample
+      data_sample_b$y <- y_boot[[i]]
+      obj_imputation_y$data_sample <- data_sample_b
+
+      y_hatb <- imputation_y(obj_imputation_y,
+                            model_formula = model_formula,
+                            type_model = type_model,
+                            tune_RF = tune_RF,
+                            xgboost_params = xgboost_params)
+
+
+      y_full_imputed <- c(data_sample$y, unlist(y_hatb$y_hat_out_of_sample))
+      y_hatb$y_full_imputed <- y_full_imputed
+      y_hatb$group_sample <- data_sample$group
+      y_hatb$group_out_of_sample <- data_out_of_sample$group
+
+      y_hat_boot[[i]] <- y_hatb
+    }
+    y_hat$y_hat_boot <- y_hat_boot
+  }
 
   output <- y_hat
 
@@ -234,13 +300,12 @@ imputation_y.MQ <- function(obj_imputation_y,
                           method = type_model)
 
   y_hat_out_of_sample <- unname(unlist(predict(outcome_fit,
-                                               newdata = data_out_of_sample,
-                                               regression_type = type_model)))
-
+                             newdata = data_out_of_sample,
+                             regression_type = type_model)))
 
   y_hat_sample <- unname(unlist(predict(outcome_fit,
-                                newdata = data_sample,
-                                regression_type = type_model)))
+                            newdata = data_sample,
+                            regression_type = type_model)))
 
   output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
                  y_hat_sample = y_hat_sample,
@@ -289,10 +354,9 @@ imputation_y.RF <- function(obj_imputation_y,
     outcome_fit <- regression_forest(X, Y, clusters = clusters)
   }
 
-  y_hat_out_of_sample <- unname(unlist(predict(outcome_fit,
-                                               newdata = X_newdata)))
+  y_hat_out_of_sample <- unname(unlist(predict(outcome_fit, newdata = X_newdata)))
 
-  y_hat_sample <- c(outcome_fit$predictions)
+  y_hat_sample <- unname(unlist(predict(outcome_fit, newdata = X)))
 
   output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
                  y_hat_sample = y_hat_sample,
@@ -330,6 +394,7 @@ imputation_y.XGB <- function(obj_imputation_y,
   nfolds = xgboost_params$nfolds
   nrounds = xgboost_params$nrounds
 
+  #clusters  = as.numeric(data_sample$group)
   if (CV_XGB) {
 
     xgboost_cv <- xgb.cv(data = X, label = Y,

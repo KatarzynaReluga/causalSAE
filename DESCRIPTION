@@ -26,6 +26,7 @@ Imports:
 	lme4 (>= 1.1-27.1),
 	mgcv (>= 1.8-38),
 	mquantreg (>= 0.1.0),
+	robustbase (>= 0.95),
 	sampling (>= 2.9),
 	stats (>= 4.0.3),
 	xgboost (>= 1.6.0)
