@@ -109,6 +109,7 @@ p_score.EBLUP <- function(obj_p_score,
   data_p_score <- obj_p_score$data_p_score
   ps_fit <- glmer(model_formula, data = data.frame(data_p_score),
                   family = binomial(link = "logit"))
+#  ps_hat <- unname(predict(ps_fit))
   ps_hat <- as.vector(predict(ps_fit,
                               newdata = data_p_score,
                               type = "response",

@@ -5,7 +5,7 @@
 setwd("./causalSAE")
 devtools::load_all()
 
-m = 25
+m = 50
 Nii = 1000
 Ni = rep(Nii, m)
 N = sum(Ni)
@@ -64,9 +64,6 @@ y1 <- y1ne + rnorm(Nii * m, 0, mean(y1ne))
 tau_treat <- aggregate(y1, list(group), FUN = mean)$x
 tau_untreat <- aggregate(y0, list(group), FUN = mean)$x
 tau_true = tau_treat - tau_untreat
-#sort(tau_true)
-#tau_true
-#plot(1:50, tau_true)
 
 # Propensity score
 intercept_p_score = - 0.1
@@ -97,9 +94,7 @@ exp_p_score = exp(intercept_p_score + Xreg_p_score + re_treat_repeat)
 
 p_score = exp_p_score * (1 + exp_p_score)^(-1)
 A <- rbinom(N, 1, p_score)
-
 A_group <- aggregate(A, list(group), FUN = mean)$x
-
 names(X) <-  paste0("X", 1:ncol(X))
 y = A * y1 + (1 - A) * y0
 

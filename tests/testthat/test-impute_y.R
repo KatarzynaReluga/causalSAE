@@ -64,7 +64,7 @@ RMSE_EBLUP <- mean((populations$y - impute_EBLUP$y_full_imputed)^2/populations$y
 
 test_that("Output is correct", {
   expect_output(str(impute_EBLUP), "List")
-  expect_equal(length(impute_EBLUP), 6)
+  expect_equal(length(impute_EBLUP), 5)
 })
 
 # Impute MQ ----------------------------------------------------
@@ -82,7 +82,7 @@ RMSE_MQ <- mean((populations$y - impute_MQ$y_full_imputed)^2/populations$y)
 
 test_that("Output is correct", {
   expect_output(str(impute_MQ), "List")
-  expect_equal(length(impute_MQ), 6)
+  expect_equal(length(impute_MQ), 5)
 })
 
 # Impute RF --------------------------------------------------------
@@ -105,27 +105,23 @@ RMSE_RF <- mean((populations$y - impute_RF$y_full_imputed)^2/populations$y)
 
 test_that("Output is correct", {
   expect_output(str(impute_RF), "List")
-  expect_equal(length(impute_RF), 6)
+  expect_equal(length(impute_RF), 5)
 })
 
 # Impute XGB ---------------------------------------------------------
 
-impute_XGB <- impute_y(
-  model_formula,
-  data_sample,
-  data_out_of_sample,
-  method = "XGB",
-  xgboost_params = list(
-    CV_XGB = TRUE,
-    nfolds = 5,
-    nrounds = 50
-  )
-)
+impute_XGB <- impute_y(model_formula,
+                  data_sample,
+                  data_out_of_sample,
+                  method = "XGB",
+                  xgboost_params = list(CV_XGB = TRUE,
+                                        nfolds = 5,
+                                        nrounds = 50))
 
 MSE_XGB <- mean((populations$y - impute_XGB$y_full_imputed)^2)
 RMSE_XGB <- mean((populations$y - impute_XGB$y_full_imputed)^2/populations$y)
 
 test_that("Output is correct", {
   expect_output(str(impute_XGB), "List")
-  expect_equal(length(impute_XGB), 6)
+  expect_equal(length(impute_XGB), 5)
 })

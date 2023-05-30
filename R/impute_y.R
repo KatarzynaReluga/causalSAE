@@ -82,19 +82,13 @@
 #'                    data_sample,
 #'                    data_out_of_sample,
 #'                    method = "EBLUP",
-#'                    type_model = "gaussian",
-#'                    params_bootstrap  = list(boot_var = FALSE,
-#'                                n_boot = 250,
-#'                                boot_seed = 10))
+#'                    type_model = "gaussian")
 #'
 #' impute_MQ <- impute_y(model_formula,
 #'                    data_sample,
 #'                    data_out_of_sample,
 #'                    method = "MQ",
-#'                    type_model = "continuous",
-#'                    params_bootstrap  = list(boot_var = FALSE,
-#'                                n_boot = 250,
-#'                                boot_seed = 10))
+#'                    type_model = "continuous")
 #'
 #' impute_RF <- impute_y(model_formula,
 #'                    data_sample,
@@ -102,11 +96,7 @@
 #'                    method = "RF",
 #'                    tune_RF = TRUE,
 #'                    xgboost_params = list(CV_XGB = TRUE,
-#'                                          nfolds = 5,
-#'                                          nrounds = 50),
-#'                    params_bootstrap  = list(boot_var = FALSE,
-#'                                n_boot = 250,
-#'                                boot_seed = 10))
+#'                                          nfolds = 5))
 #'
 #' impute_XGB <- impute_y(model_formula,
 #'                    data_sample,
@@ -114,10 +104,7 @@
 #'                    method = "XGB",
 #'                    xgboost_params = list(CV_XGB = TRUE,
 #'                                          nfolds = 5,
-#'                                          nrounds = 50),
-#'                    params_bootstrap  = list(boot_var = FALSE,
-#'                                n_boot = 250,
-#'                                boot_seed = 10))
+#'                                          nrounds = 50))
 #'
 #'
 
@@ -132,45 +119,66 @@ impute_y <- function(model_formula,
                                            nfolds = 5,
                                            nrounds = 50),
                      params_bootstrap  = list(boot_var = FALSE,
-                                              n_boot = 250,
+                                              n_boot = 100,
                                               boot_seed = 10,
                                               type_boot = "br1",
-                                              method_scale = "mad",
-                                              method_center = "median"),
+#                                              method_scale = "mad",
+#                                              method_center = "median",
+                                              rand_clust = TRUE),
                      ...) {
 
   # Check and format data
   method <- match.arg(method)
+  obj_fit_y <- list(data_sample = data_sample,
+                    data_out_of_sample = data_out_of_sample)
 
-  obj_imputation_y <- list(data_sample = data_sample,
-                           data_out_of_sample = data_out_of_sample)
-  class(obj_imputation_y) <- method
+  class(obj_fit_y) <- method
+  mutated_obj <- mutate_obj_fit(obj_fit_y, model_formula)
 
-  y_hat <- imputation_y(obj_imputation_y,
-                        model_formula = model_formula,
-                        type_model = type_model,
-                        tune_RF = tune_RF,
-                        xgboost_params = xgboost_params)
+  y_hat <- fit_y(mutated_obj,
+                 type_model = type_model,
+                 tune_RF = tune_RF,
+                 xgboost_params = xgboost_params)
 
+  output <- y_hat
 
-  y_full_imputed <- c(data_sample$y, unlist(y_hat$y_hat_out_of_sample))
-  y_hat$y_full_imputed <- y_full_imputed
-  y_hat$group_sample <- data_sample$group
-  y_hat$group_out_of_sample <- data_out_of_sample$group
+  if (method == "EBLUP") {
+    y_hat_out_of_sample <- predict(y_hat$outcome_fit,
+                                   newdata = data_out_of_sample)
+  } else if (method == "MQ") {
+    y_hat_out_of_sample <- predict(y_hat$outcome_fit,
+                                   newdata = data_out_of_sample,
+                                   regression_type = type_model)
+  } else if (method == "RF") {
+    y_hat_out_of_sample <- unname(unlist(predict(y_hat$outcome_fit,
+                                   newdata = mutated_obj$X_newdata,
+                                   clusters = mutated_obj$clusters_out_of_sample)))
+  } else {
+    y_hat_out_of_sample <- unname(unlist(predict(y_hat$outcome_fit,
+                                   newdata = mutated_obj$X_newdata)))
+  }
+
+  output$y_full_imputed <- c(data_sample$y, y_hat_out_of_sample)
+  output$group_sample <- data_sample$group
+  output$group_out_of_sample <- data_out_of_sample$group
 
   if (params_bootstrap$boot_var) {
 
 
     y_boot <- residual_bootstrap(y = data_sample$y,
-                       y_hat = y_hat$y_hat_sample,
+                       y_hat = output$y_hat,
                        data_sample = data_sample,
                        n_boot  = params_bootstrap$n_boot,
                        type_boot = params_bootstrap$type_boot,
-                       method_scale = params_bootstrap$method_scale,
-                       method_center = params_bootstrap$method_center,
-                       boot_seed = params_bootstrap$boot_seed)
+ #                      method_scale  = params_bootstrap$method_scale,
+ #                      method_center  = params_bootstrap$method_center,
+                       boot_seed = params_bootstrap$boot_seed,
+                       rand_clust = params_bootstrap$rand_clust)
 
-    y_hat_boot <- list()
+
+
+    y_full_b <- list()
+    obj_fit_y_b <- obj_fit_y
 
     for (i in 1 : params_bootstrap$n_boot) {
       #print(i)
@@ -179,258 +187,40 @@ impute_y <- function(model_formula,
         # Print on the screen some message
         cat(paste0("Bootstrap iteration: ", i, "\n"))
       }
-      data_sample_b <- data_sample
-      data_sample_b$y <- y_boot[[i]]
-      obj_imputation_y$data_sample <- data_sample_b
+#      data_sample_b <- data_sample
 
-      y_hatb <- imputation_y(obj_imputation_y,
-                            model_formula = model_formula,
-                            type_model = type_model,
-                            tune_RF = tune_RF,
-                            xgboost_params = xgboost_params)
+      obj_fit_y_b$data_sample$y <- y_boot[[i]]
+      mutated_obj_b <- mutate_obj_fit(obj_fit_y_b, model_formula)
+
+      y_hatb <- fit_y(mutated_obj_b,
+                      type_model = type_model,
+                      tune_RF = tune_RF,
+                      xgboost_params = xgboost_params)
 
 
-      y_full_imputed <- c(data_sample$y, unlist(y_hatb$y_hat_out_of_sample))
-      y_hatb$y_full_imputed <- y_full_imputed
-      y_hatb$group_sample <- data_sample$group
-      y_hatb$group_out_of_sample <- data_out_of_sample$group
+      if (method == "EBLUP") {
+        y_hat_out_of_sample_b <- unname(unlist(predict(y_hatb$outcome_fit,
+                                       newdata = data_out_of_sample,
+                                       allow.new.levels = TRUE)))
+      } else if (method == "MQ") {
+        y_hat_out_of_sample_b <- unname(unlist(predict(y_hatb$outcome_fit,
+                                       newdata = data_out_of_sample,
+                                       regression_type = type_model)))
+      } else if (method == "RF") {
+        y_hat_out_of_sample_b <- unname(unlist(predict(y_hatb$outcome_fit,
+                                                     newdata = mutated_obj$X_newdata,
+                                                     clusters = mutated_obj$clusters_out_of_sample)))
+      } else {
+        y_hat_out_of_sample_b <- unname(unlist(predict(y_hatb$outcome_fit,
+                                                     newdata = mutated_obj$X_newdata)))
+      }
 
-      y_hat_boot[[i]] <- y_hatb
+      y_full_boot <- c(y_boot[[i]], y_hat_out_of_sample_b)
+
+      y_full_b[[i]] <- y_full_boot
     }
-    y_hat$y_hat_boot <- y_hat_boot
+    output$y_full_b <- y_full_b
   }
-
-  output <- y_hat
-
-  return(output)
-}
-
-
-#'
-#' Internal generic function to impute values of y
-#'
-#' @inheritParams impute_y
-#' @param obj_imputation_y Object to impute data
-#'
-#' @return List with following parameters:
-#' \item{y_hat_out_of_sample}{imputed out of sample outcomes}
-#' \item{y_hat_sample}{predicted sample data using fitted model}
-#' \item{outcome_fit}{fitted model to impute the data}
-#'
-#' @importFrom lme4 lmer glmer
-#' @importFrom stats terms
-#' @importFrom grf regression_forest
-#' @importFrom xgboost xgboost xgb.cv
-#' @importFrom mquantreg mquantreg
-#'
-
-
-imputation_y <- function(...)
-  UseMethod("imputation_y")
-
-
-#'
-#' @describeIn imputation_y Function to estimate imputation_y using EBLUP
-#' @export
-#'
-
-
-imputation_y.EBLUP <- function(obj_imputation_y,
-                               model_formula,
-                               type_model,
-                               ...) {
-
-  # Add additional parameter for sample
-
-  data_sample = obj_imputation_y$data_sample
-  data_out_of_sample = obj_imputation_y$data_out_of_sample
-
-  if (type_model == "gaussian") {
-
-    outcome_fit <- lmer(model_formula, data = data_sample)
-  } else {
-    outcome_fit <- glmer(model_formula, data = data_sample, family = type_model)
-  }
-
-  y_hat_out_of_sample <- predict(outcome_fit,
-                                 newdata = data_out_of_sample,
-                                 allow.new.levels = TRUE)
-
-  y_hat_sample <- predict(outcome_fit,
-                          newdata = data_sample,
-                          allow.new.levels = TRUE)
-
-  output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
-                 y_hat_sample = y_hat_sample,
-                 outcome_fit = outcome_fit)
-
-
-  return(output)
-}
-
-#'
-#' @describeIn imputation_y Function to estimate imputation_y using MQ
-#' @export
-#'
-
-
-imputation_y.MQ <- function(obj_imputation_y,
-                            model_formula,
-                            type_model,
-                            ...) {
-
-  data_sample = obj_imputation_y$data_sample
-  data_out_of_sample = obj_imputation_y$data_out_of_sample
-
-  # Get the (predictor) variables
-  vars <- attr(terms(model_formula), which = "term.labels")
-
-  # Get the response
-  response <- as.character(attr(terms(model_formula), which = "variables")[[2]]) # The response variable name
-
-  # Get the predictors without group variable
-  predictor <- paste(vars[-length(vars)], collapse = " + ")
-
-  # Build a formula
-  model_formulaMQ <- paste(response, " ~ ", predictor)
-
-  outcome_fit = mquantreg(formula = model_formulaMQ,
-                          data = data_sample,
-                          q  = 0.5,
-                          method = type_model)
-
-  y_hat_out_of_sample <- unname(unlist(predict(outcome_fit,
-                             newdata = data_out_of_sample,
-                             regression_type = type_model)))
-
-  y_hat_sample <- unname(unlist(predict(outcome_fit,
-                            newdata = data_sample,
-                            regression_type = type_model)))
-
-  output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
-                 y_hat_sample = y_hat_sample,
-                 outcome_fit = outcome_fit)
-
-  return(output)
-
-}
-
-
-#'
-#' @describeIn imputation_y Function to estimate imputation_y using RF
-#' @export
-#'
-
-
-
-imputation_y.RF <- function(obj_imputation_y,
-                            model_formula,
-                            type_model,
-                            tune_RF,
-                            ...) {
-
-  data_sample = obj_imputation_y$data_sample
-  data_out_of_sample = obj_imputation_y$data_out_of_sample
-
-  # Get the (predictor) variables
-
-  formatted_data <- format_data(model_formula = model_formula,
-                                data_sample = data_sample,
-                                data_out_of_sample = data_out_of_sample)
-  X = formatted_data$X
-  X_newdata = formatted_data$X_newdata
-  Y = formatted_data$Y
-  clusters = formatted_data$clusters_sample
-
-  if (tune_RF) {
-    test  = "try-error"
-    while(test == "try-error") {
-    outcome_fit <-  try(regression_forest(X, Y,
-                                     clusters = clusters,
-                                     tune.parameters = "all"), silent = TRUE)
-    test = class(outcome_fit)[1]
-    }
-  } else {
-    outcome_fit <- regression_forest(X, Y, clusters = clusters)
-  }
-
-  y_hat_out_of_sample <- unname(unlist(predict(outcome_fit, newdata = X_newdata)))
-
-  y_hat_sample <- unname(unlist(predict(outcome_fit, newdata = X)))
-
-  output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
-                 y_hat_sample = y_hat_sample,
-                 outcome_fit = outcome_fit)
-
-  return(output)
-
-}
-
-#'
-#' @describeIn imputation_y Function to estimate imputation_y using RF
-#' @export
-#'
-
-
-imputation_y.XGB <- function(obj_imputation_y,
-                             model_formula,
-                             type_model,
-                             xgboost_params,
-                             ...) {
-
-  data_sample = obj_imputation_y$data_sample
-  data_out_of_sample = obj_imputation_y$data_out_of_sample
-
-  # Format data
-
-  formatted_data <- format_data(model_formula = model_formula,
-                                 data_sample = data_sample,
-                                 data_out_of_sample = data_out_of_sample)
-  X = as.matrix(formatted_data$X)
-  X_newdata = as.matrix(formatted_data$X_newdata)
-  Y = unlist(formatted_data$Y)
-
-  CV_XGB = xgboost_params$CV_XGB
-  nfolds = xgboost_params$nfolds
-  nrounds = xgboost_params$nrounds
-
-  #clusters  = as.numeric(data_sample$group)
-  if (CV_XGB) {
-
-    xgboost_cv <- xgb.cv(data = X, label = Y,
-                         nfold = nfolds,
-                         nrounds = nrounds,
-                         verbose = FALSE)
-    best_iter_xgb = which.min(xgboost_cv$evaluation_log$test_rmse_mean)
-
-    outcome_fit <- xgboost(data = X, label = Y,
-                           nrounds = best_iter_xgb,
-                           verbose = FALSE)
-
-    y_hat_out_of_sample <- predict(outcome_fit,
-                                   newdata = X_newdata,
-                                   iteration_range =  best_iter_xgb)
-
-    y_hat_sample <- predict(outcome_fit,
-                            newdata = X,
-                            iteration_range =  best_iter_xgb)
-
-  } else {
-    outcome_fit <- xgboost(data = X, label = Y,
-                           nrounds = nrounds,
-                           verbose = FALSE)
-
-    y_hat_out_of_sample <- predict(outcome_fit,
-                                   newdata = X_newdata)
-
-    y_hat_sample <- predict(outcome_fit,
-                            newdata = X)
-  }
-
-  output <- list(y_hat_out_of_sample = y_hat_out_of_sample,
-                 y_hat_sample = y_hat_sample,
-                 outcome_fit = outcome_fit)
-
 
   return(output)
 }

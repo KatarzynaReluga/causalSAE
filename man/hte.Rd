@@ -16,8 +16,8 @@ hte(
   params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A || group), method =
     "EBLUP", tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
     50), type_model = "gaussian"),
-  params_bootstrap = list(boot_var = FALSE, n_boot = 250, boot_seed = 10, type_boot =
-    "br1", method_scale = "sd", method_center = "mean"),
+  params_bootstrap = list(boot_var = FALSE, n_boot = 100, boot_seed = 10, type_boot =
+    "br1"),
   estimated_p_score = NULL,
   ...
 )

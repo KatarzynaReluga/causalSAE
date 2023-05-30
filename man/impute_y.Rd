@@ -12,8 +12,8 @@ impute_y(
   type_model = "gaussian",
   tune_RF = FALSE,
   xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50),
-  params_bootstrap = list(boot_var = FALSE, n_boot = 250, boot_seed = 10, type_boot =
-    "br1", method_scale = "mad", method_center = "median"),
+  params_bootstrap = list(boot_var = FALSE, n_boot = 100, boot_seed = 10, type_boot =
+    "br1", rand_clust = TRUE),
   ...
 )
 }
@@ -107,19 +107,13 @@ impute_EBLUP <- impute_y(model_formula,
                    data_sample,
                    data_out_of_sample,
                    method = "EBLUP",
-                   type_model = "gaussian",
-                   params_bootstrap  = list(boot_var = FALSE,
-                               n_boot = 250,
-                               boot_seed = 10))
+                   type_model = "gaussian")
 
 impute_MQ <- impute_y(model_formula,
                    data_sample,
                    data_out_of_sample,
                    method = "MQ",
-                   type_model = "continuous",
-                   params_bootstrap  = list(boot_var = FALSE,
-                               n_boot = 250,
-                               boot_seed = 10))
+                   type_model = "continuous")
 
 impute_RF <- impute_y(model_formula,
                    data_sample,
@@ -127,11 +121,7 @@ impute_RF <- impute_y(model_formula,
                    method = "RF",
                    tune_RF = TRUE,
                    xgboost_params = list(CV_XGB = TRUE,
-                                         nfolds = 5,
-                                         nrounds = 50),
-                   params_bootstrap  = list(boot_var = FALSE,
-                               n_boot = 250,
-                               boot_seed = 10))
+                                         nfolds = 5))
 
 impute_XGB <- impute_y(model_formula,
                    data_sample,
@@ -139,10 +129,7 @@ impute_XGB <- impute_y(model_formula,
                    method = "XGB",
                    xgboost_params = list(CV_XGB = TRUE,
                                          nfolds = 5,
-                                         nrounds = 50),
-                   params_bootstrap  = list(boot_var = FALSE,
-                               n_boot = 250,
-                               boot_seed = 10))
+                                         nrounds = 50))
 
 
 }

@@ -145,11 +145,9 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                 ),
                 params_bootstrap  = list(
                   boot_var = FALSE,
-                  n_boot = 250,
+                  n_boot = 100,
                   boot_seed = 10,
-                  type_boot = "br1",
-                  method_scale = "sd",
-                  method_center = "mean"
+                  type_boot = "br1"
                 ),
                 estimated_p_score = NULL,
                 ...) {
@@ -208,6 +206,8 @@ estimate_hte.OR <- function(obj_hte,
                             params_OR,
                             params_bootstrap,
                             ...) {
+
+
   fitted_OR <- fit_OR(obj_hte, params_OR, params_bootstrap)
 
   #  data_OR <- fit_OR$data_OR
@@ -233,7 +233,7 @@ estimate_hte.OR <- function(obj_hte,
                        ncol = length(tau))
 
     for (i in 1:params_bootstrap$n_boot) {
-      data_ORb <- fitted_OR$data_ORb[[i]]
+      data_ORb <- fitted_OR$data_OR_boot[[i]]
 
       tau_treatb = aggregate(data_ORb$mu1_y, list(data_ORb$group), FUN = mean)$x
       tau_untreatb = aggregate(data_ORb$mu0_y, list(data_ORb$group), FUN = mean)$x
@@ -243,7 +243,8 @@ estimate_hte.OR <- function(obj_hte,
 
     var_tau <- colMeans((tau_boot - tau) ^ 2)
     tau_data$var_tau <- var_tau
-
+    bias_tau <- colMeans(tau_boot - tau)
+    tau_data$bias_tau <- bias_tau
   }
 
 
@@ -288,6 +289,8 @@ estimate_hte.IPW <- function(obj_hte,
 
     var_tau <- colMeans((tau_boot - tau_data$tau) ^ 2)
     tau_data$var_tau <- var_tau
+    bias_tau <- colMeans(tau_boot - tau_data$tau)
+    tau_data$bias_tau <- bias_tau
 
   }
 
@@ -331,6 +334,8 @@ estimate_hte.NIPW <- function(obj_hte,
 
     var_tau <- colMeans((tau_boot - tau_data$tau) ^ 2)
     tau_data$var_tau <- var_tau
+    bias_tau <- colMeans(tau_boot - tau_data$tau)
+    tau_data$bias_tau <- bias_tau
 
   }
 
@@ -382,8 +387,8 @@ estimate_hte.AIPW <- function(obj_hte,
     for (i in 1:params_bootstrap$n_boot) {
 
       AIPW_datab <- IPW_data_fit$IPW_datab[[i]]
-      AIPW_datab$mu0_y <- fitted_OR$data_ORb[[i]]$mu0_y
-      AIPW_datab$mu1_y <- fitted_OR$data_ORb[[i]]$mu1_y
+      AIPW_datab$mu0_y <- fitted_OR$data_OR_boot[[i]]$mu0_y
+      AIPW_datab$mu1_y <- fitted_OR$data_OR_boot[[i]]$mu0_y
 
       tau_boot[i,] =  calculate_tau(AIPW_datab, type_tau = "AIPW")[[1]]$tau
 
@@ -391,6 +396,8 @@ estimate_hte.AIPW <- function(obj_hte,
 
     var_tau <- colMeans((tau_boot - tau_data$tau) ^ 2)
     tau_data$var_tau <- var_tau
+    bias_tau <- colMeans(tau_boot - tau_data$tau)
+    tau_data$bias_tau <- bias_tau
 
   }
 
@@ -470,13 +477,13 @@ obtain_IPW_data <- function(obj_hte,
 
   if (params_bootstrap$boot_var) {
 
-    y_hat_boot <- imputed_y$y_hat_boot
+    y_full_b <- imputed_y$y_full_b
 
     IPW_datab <- list()
 
     for (i in 1:params_bootstrap$n_boot) {
 
-      y_full_imputeb <- y_hat_boot[[i]]$y_full_imputed
+      y_full_imputeb <- y_full_b[[i]]
 
       IPW_datab[[i]] <- data.frame(
         y = y_full_imputeb,

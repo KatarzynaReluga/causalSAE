@@ -9,10 +9,9 @@ residual_bootstrap(
   y_hat,
   data_sample,
   n_boot = 250,
-  type_boot = c("br1", "br2"),
-  method_scale = c("sd", "Qn", "mad"),
-  method_center = c("mean", "median"),
+  type_boot = c("br1", "br2", "br3", "br4", "br5"),
   boot_seed = 10,
+  rand_clust = FALSE,
   ...
 )
 }
@@ -28,16 +27,9 @@ residual_bootstrap(
 \item{type_boot}{Type of bootstrap: \code{br1} - one-level block residual bootstrap,
 \code{br2} - two-level block residual bootstrap.}
 
-\item{method_scale}{\itemize{
-\item Method to scale residuals: \code{sd}: standard deviation,
-\code{Qn}: robust and efficient estimate of scale as in Rousseeuw and Croux (1993)
-\code{mad}: median absolute deviation. Default: \code{method_scale = sd}.
-}}
-
-\item{method_center}{Method to center residuals: \code{mean}: mean, \code{median}: median.
-Default: \code{method_center = mean}.}
-
 \item{boot_seed}{Seed to repeat bootstrap sampling}
+
+\item{rand_clust}{Random clusters}
 
 \item{...}{Additional parameters}
 }

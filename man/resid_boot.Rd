@@ -4,6 +4,9 @@
 \alias{resid_boot}
 \alias{resid_boot.br1}
 \alias{resid_boot.br2}
+\alias{resid_boot.br3}
+\alias{resid_boot.br4}
+\alias{resid_boot.br5}
 \title{Bootstrap residuals}
 \usage{
 resid_boot(...)
@@ -11,6 +14,12 @@ resid_boot(...)
 \method{resid_boot}{br1}(obj_boot, ...)
 
 \method{resid_boot}{br2}(obj_boot, ...)
+
+\method{resid_boot}{br3}(obj_boot, ...)
+
+\method{resid_boot}{br4}(obj_boot, ...)
+
+\method{resid_boot}{br5}(obj_boot, ...)
 }
 \arguments{
 \item{...}{Additional parameters}
@@ -22,8 +31,14 @@ Internal generic function to bootstrap residuals
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{br1}: One-level block residual bootstrap
+\item \code{br1}: Two-level block residual bootstrap
 
 \item \code{br2}: Two-level block residual bootstrap
+
+\item \code{br3}: Two-level block residual bootstrap
+
+\item \code{br4}: Two-level block residual bootstrap
+
+\item \code{br5}: Two-level block residual bootstrap
 }}
 

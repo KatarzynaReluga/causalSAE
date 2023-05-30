@@ -4,7 +4,7 @@
 \alias{bootstrap_indices}
 \title{Bootstrap indices from the sample}
 \usage{
-bootstrap_indices(sample_sizes, n_boot = 50, seed = 1)
+bootstrap_indices(sample_sizes, n_boot = 50, seed = 1, rand_clust)
 }
 \arguments{
 \item{sample_sizes}{Data from the sample}
@@ -12,6 +12,8 @@ bootstrap_indices(sample_sizes, n_boot = 50, seed = 1)
 \item{n_boot}{Number of bootstrap samples}
 
 \item{seed}{Seed to run simulations.}
+
+\item{rand_clust}{Select clusters randomly. Default: \code{rand_clust = FALSE}.}
 }
 \value{
 List with following parameters:
