@@ -14,7 +14,7 @@ fit_y(...)
 
 \method{fit_y}{MQ}(obj_fit_y, type_model, ...)
 
-\method{fit_y}{RF}(obj_fit_y, type_model, tune_RF, ...)
+\method{fit_y}{RF}(obj_fit_y, type_model, tune_RF, clust_RF, ...)
 
 \method{fit_y}{XGB}(obj_fit_y, type_model, xgboost_params, ...)
 }
@@ -34,6 +34,8 @@ fit_y(...)
 
 \item{tune_RF}{Tune parameters in random forest? Default = FALSE.}
 
+\item{clust_RF}{Use clustering in random forest? Default = TRUE}
+
 \item{xgboost_params}{List with parameters to run xgboost:
 \itemize{
 \item CV_XGB - logical variable, use cross-validation for gradient boosting? Default: TRUE.
@@ -52,12 +54,12 @@ Geeneric function to fit values of y
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{EBLUP}: Function to estimate fit_y using EBLUP
+\item \code{fit_y(EBLUP)}: Function to estimate fit_y using EBLUP
 
-\item \code{MQ}: Function to estimate fit_y using MQ
+\item \code{fit_y(MQ)}: Function to estimate fit_y using MQ
 
-\item \code{RF}: Function to estimate fit_y using RF
+\item \code{fit_y(RF)}: Function to estimate fit_y using RF
 
-\item \code{XGB}: Function to estimate fit_y using RF
+\item \code{fit_y(XGB)}: Function to estimate fit_y using RF
+
 }}
-

@@ -105,10 +105,10 @@ This is a generic function to generate outcome variables
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{continuous}: Generate population with normally distributed outcomes
+\item \code{gen_outcome(continuous)}: Generate population with normally distributed outcomes
 
-\item \code{binary}: Generate population with Poisson distributed outcomes
+\item \code{gen_outcome(binary)}: Generate population with Poisson distributed outcomes
 
-\item \code{poisson}: Generate population with binomial distributed outcomes
+\item \code{gen_outcome(poisson)}: Generate population with binomial distributed outcomes
+
 }}
-

@@ -30,12 +30,12 @@ Generic function to format data
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{EBLUP}: Function to estimate fit_y using EBLUP
+\item \code{mutate_obj_fit(EBLUP)}: Function to estimate fit_y using EBLUP
 
-\item \code{MQ}: Function to estimate fit_y using MQ
+\item \code{mutate_obj_fit(MQ)}: Function to estimate fit_y using MQ
 
-\item \code{RF}: Function to estimate fit_y using RF
+\item \code{mutate_obj_fit(RF)}: Function to estimate fit_y using RF
 
-\item \code{XGB}: Function to estimate fit_y using XGB
+\item \code{mutate_obj_fit(XGB)}: Function to estimate fit_y using XGB
+
 }}
-

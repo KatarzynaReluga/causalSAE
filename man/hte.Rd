@@ -8,14 +8,15 @@ hte(
   type_hte = c("OR", "IPW", "NIPW", "AIPW"),
   data_sample,
   data_out_of_sample,
-  params_p_score = list(model_formula = A ~ X1 + (1 | group), method = "EBLUP", tune_RF
-    = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50)),
-  params_OR = list(model_formula = y ~ X1 + Xo1 + (1 | group), method = "EBLUP",
-    tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50),
-    type_model = "gaussian"),
-  params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A || group), method =
-    "EBLUP", tune_RF = FALSE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
+  params_p_score = list(model_formula = A ~ X1 + (1 | group), method = "EBLUP", tune_RF =
+    FALSE, clust_RF = TRUE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
+    50)),
+  params_OR = list(model_formula = y ~ X1 + Xo1 + (1 | group), method = "EBLUP", tune_RF
+    = FALSE, clust_RF = TRUE, xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds =
     50), type_model = "gaussian"),
+  params_impute_y = list(model_formula = y ~ X1 + Xo1 + A + (1 + A || group), method =
+    "EBLUP", tune_RF = FALSE, clust_RF = TRUE, xgboost_params = list(CV_XGB = TRUE,
+    nfolds = 5, nrounds = 50), type_model = "gaussian"),
   params_bootstrap = list(boot_var = FALSE, n_boot = 100, boot_seed = 10, type_boot =
     "br1"),
   estimated_p_score = NULL,
@@ -36,6 +37,7 @@ hte(
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
@@ -47,6 +49,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
@@ -59,6 +62,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.

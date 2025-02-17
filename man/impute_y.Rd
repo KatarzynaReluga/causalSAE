@@ -11,6 +11,7 @@ impute_y(
   method = c("EBLUP", "MQ", "RF", "XGB"),
   type_model = "gaussian",
   tune_RF = FALSE,
+  clust_RF = TRUE,
   xgboost_params = list(CV_XGB = TRUE, nfolds = 5, nrounds = 50),
   params_bootstrap = list(boot_var = FALSE, n_boot = 100, boot_seed = 10, type_boot =
     "br1", rand_clust = TRUE),
@@ -29,6 +30,8 @@ impute_y(
 \item{type_model}{Type of outcome.}
 
 \item{tune_RF}{Tune parameters in random forest? Default = FALSE.}
+
+\item{clust_RF}{Use clustering in random forest? Default = TRUE}
 
 \item{xgboost_params}{List with parameters to run xgboost:
 \itemize{
@@ -119,7 +122,8 @@ impute_RF <- impute_y(model_formula,
                    data_sample,
                    data_out_of_sample,
                    method = "RF",
-                   tune_RF = TRUE,
+                   tune_RF = FALSE,
+                   clust_RF = FALSE,
                    xgboost_params = list(CV_XGB = TRUE,
                                          nfolds = 5))
 

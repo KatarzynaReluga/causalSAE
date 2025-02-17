@@ -31,12 +31,12 @@ This is a generic function to generate outcome variables
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{sin}: Sine functional form
+\item \code{fct_form(sin)}: Sine functional form
 
-\item \code{exp}: Sine functional form
+\item \code{fct_form(exp)}: Sine functional form
 
-\item \code{sin_exp}: Sine(exp) functional form
+\item \code{fct_form(sin_exp)}: Sine(exp) functional form
 
-\item \code{lin}: Linear functional form
+\item \code{fct_form(lin)}: Linear functional form
+
 }}
-

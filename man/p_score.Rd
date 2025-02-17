@@ -14,7 +14,7 @@ p_score(...)
 
 \method{p_score}{MQ}(obj_p_score, model_formula, ...)
 
-\method{p_score}{RF}(obj_p_score, model_formula, tune_RF = FALSE, ...)
+\method{p_score}{RF}(obj_p_score, model_formula, tune_RF = FALSE, clust_RF = TRUE, ...)
 
 \method{p_score}{XGB}(obj_p_score, model_formula, xgboost_params, ...)
 }
@@ -26,6 +26,8 @@ p_score(...)
 \item{model_formula}{Model formula.}
 
 \item{tune_RF}{Tune parameters for fitting random forest? Default: \code{tune_RF = FALSE}.}
+
+\item{clust_RF}{Use clustering in random forest? Default = TRUE}
 
 \item{xgboost_params}{List of parameters to obtain predictions using gradient boosting:
 \itemize{
@@ -39,15 +41,15 @@ Fit propensity score model
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{EBLUP}: Function to estimate p_score using EBLUP
+\item \code{p_score(EBLUP)}: Function to estimate p_score using EBLUP
 
-\item \code{MQ}: Function to estimate p_score using MQ
+\item \code{p_score(MQ)}: Function to estimate p_score using MQ
 
-\item \code{RF}: Function to estimate p_score using RF
+\item \code{p_score(RF)}: Function to estimate p_score using RF
 
-\item \code{XGB}: Function to estimate p_score using RF
+\item \code{p_score(XGB)}: Function to estimate p_score using RF
+
 }}
-
 \examples{
 
 m = 50
@@ -107,7 +109,8 @@ class(obj_p_score_RF) <- "RF"
 
 ps_hat_RF <-  p_score(obj_p_score = obj_p_score_RF,
                      model_formula = A ~ X1 + (1|group),
-                     tune_RF = FALSE)
+                     tune_RF = FALSE,
+                     clust_RF = FALSE)
 
 # XGB
 

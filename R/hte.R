@@ -11,6 +11,7 @@
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
+#'  \item clust_RF - add clustering to random forest,
 #'  \item xgboost_params - list of parameters to obtain predictions
 #'  using gradient boosting, default: \code{CV_XGB = TRUE},
 #'  \code{nfolds = 5}, \code{nrounds = 50}.
@@ -21,6 +22,7 @@
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
+#'  \item clust_RF - add clustering to random forest,
 #'  \item xgboost_params - list of parameters to obtain predictions
 #'  using gradient boosting, default: \code{CV_XGB = TRUE},
 #'  \code{nfolds = 5}, \code{nrounds = 50}.
@@ -32,6 +34,7 @@
 #'  \item method - estimation method, choose between: \code{EBLUP},
 #'  \code{MQ}, \code{RF}, \code{XGB},
 #'  \item tune_RF - tune random forest parameters,
+#'  \item clust_RF - add clustering to random forest,
 #'  \item xgboost_params - list of parameters to obtain predictions
 #'  using gradient boosting, default: \code{CV_XGB = TRUE},
 #'  \code{nfolds = 5}, \code{nrounds = 50}.
@@ -115,6 +118,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                   model_formula = A ~ X1 + (1 | group),
                   method = "EBLUP",
                   tune_RF = FALSE,
+                  clust_RF = TRUE,
                   xgboost_params = list(
                     CV_XGB = TRUE,
                     nfolds = 5,
@@ -125,6 +129,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                   model_formula = y ~ X1 + Xo1 + (1 | group),
                   method = "EBLUP",
                   tune_RF = FALSE,
+                  clust_RF = TRUE,
                   xgboost_params = list(
                     CV_XGB = TRUE,
                     nfolds = 5,
@@ -136,6 +141,7 @@ hte <- function(type_hte = c("OR", "IPW", "NIPW", "AIPW"),
                   model_formula = y ~ X1 + Xo1 + A + (1 + A || group),
                   method = "EBLUP",
                   tune_RF = FALSE,
+                  clust_RF = TRUE,
                   xgboost_params = list(
                     CV_XGB = TRUE,
                     nfolds = 5,
@@ -447,7 +453,8 @@ obtain_IPW_data <- function(obj_hte,
       obj_p_score = obj_p_score,
       model_formula = params_p_score$model_formula,
       xgboost_params = params_p_score$xgboost_params,
-      tune_RF = params_p_score$tune_RF
+      tune_RF = params_p_score$tune_RF,
+      clust_RF = params_p_score$clust_RF
     )
 
   }
@@ -460,6 +467,7 @@ obtain_IPW_data <- function(obj_hte,
       method = params_impute_y$method,
       type_model = params_impute_y$type_model,
       tune_RF = params_impute_y$tune_RF,
+      clust_RF = params_impute_y$clust_RF,
       xgboost_params = params_impute_y$xgboost_params,
       params_bootstrap = params_bootstrap
     )

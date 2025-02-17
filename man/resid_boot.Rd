@@ -7,6 +7,8 @@
 \alias{resid_boot.br3}
 \alias{resid_boot.br4}
 \alias{resid_boot.br5}
+\alias{resid_boot.br6}
+\alias{resid_boot.br7}
 \title{Bootstrap residuals}
 \usage{
 resid_boot(...)
@@ -20,6 +22,10 @@ resid_boot(...)
 \method{resid_boot}{br4}(obj_boot, ...)
 
 \method{resid_boot}{br5}(obj_boot, ...)
+
+\method{resid_boot}{br6}(obj_boot, ...)
+
+\method{resid_boot}{br7}(obj_boot, ...)
 }
 \arguments{
 \item{...}{Additional parameters}
@@ -31,14 +37,18 @@ Internal generic function to bootstrap residuals
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{br1}: Two-level block residual bootstrap
+\item \code{resid_boot(br1)}: Two-level block residual bootstrap without re-scaling (sample from level one and level two residuals)
 
-\item \code{br2}: Two-level block residual bootstrap
+\item \code{resid_boot(br2)}: One-level block residual bootstrap by treatment group
 
-\item \code{br3}: Two-level block residual bootstrap
+\item \code{resid_boot(br3)}: Two-level block residual bootstrap by treatment group
 
-\item \code{br4}: Two-level block residual bootstrap
+\item \code{resid_boot(br4)}: Two-level block residual bootstrap by treatment group
 
-\item \code{br5}: Two-level block residual bootstrap
+\item \code{resid_boot(br5)}: Two-level block residual bootstrap by treatment group
+
+\item \code{resid_boot(br6)}: Two-level block residual bootstrap by treatment group
+
+\item \code{resid_boot(br7)}: Two-level block residual bootstrap without re-scaling (sample from level one and level two residuals)
+
 }}
-

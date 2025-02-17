@@ -46,6 +46,7 @@ fit_OR <- function(obj_hte,
   OR0 <- fit_y(mutated_obj0,
                  type_model = params_OR$type_model,
                  tune_RF = params_OR$tune_RF,
+                 clust_RF = params_OR$clust_RF,
                  xgboost_params = params_OR$xgboost_params,
                  params_bootstrap = params_bootstrap)
 
@@ -66,6 +67,7 @@ fit_OR <- function(obj_hte,
   OR1 <- fit_y(mutated_obj1,
                type_model = params_OR$type_model,
                tune_RF = params_OR$tune_RF,
+               clust_RF = params_OR$clust_RF,
                xgboost_params = params_OR$xgboost_params,
                params_bootstrap = params_bootstrap)
 
@@ -123,6 +125,7 @@ a = Sys.time()
       OR1b <- fit_y(mutated_obj_b1,
                       type_model = params_OR$type_model,
                       tune_RF = params_OR$tune_RF,
+                      clust_RF = params_OR$clust_RF,
                       xgboost_params = params_OR$xgboost_params)
       mu1b_y <-  unname(unlist(predict(object = OR1b$outcome_fit,
                                       newdata = data_full,
@@ -136,6 +139,7 @@ a = Sys.time()
       OR0b <- fit_y(mutated_obj_b0,
                        type_model = params_OR$type_model,
                        tune_RF = params_OR$tune_RF,
+                       clust_RF = params_OR$clust_RF,
                        xgboost_params = params_OR$xgboost_params)
       mu0b_y <-  unname(unlist(predict(object = OR0b$outcome_fit,
                                       newdata = data_full,

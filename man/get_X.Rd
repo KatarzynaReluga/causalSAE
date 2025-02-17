@@ -37,10 +37,10 @@ Generic function to generate covariate \code{X} from normal, log-normal or unifo
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{norm}: Generate covariate from normal distribution.
+\item \code{get_X(norm)}: Generate covariate from normal distribution.
 
-\item \code{lognorm}: Generate covariate from log-normal distribution.
+\item \code{get_X(lognorm)}: Generate covariate from log-normal distribution.
 
-\item \code{unif}: Generate covariate from uniform distribution.
+\item \code{get_X(unif)}: Generate covariate from uniform distribution.
+
 }}
-

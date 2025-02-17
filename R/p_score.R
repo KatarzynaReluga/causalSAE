@@ -5,6 +5,7 @@
 #' @inheritParams impute_y
 #' @param obj_p_score Object defining propensity score fit.
 #' @param tune_RF Tune parameters for fitting random forest? Default: \code{tune_RF = FALSE}.
+#' @param clust_RF Use clustering in random forest? Default = TRUE
 #' @param xgboost_params List of parameters to obtain predictions using gradient boosting:
 #'  \itemize{
 #'  \item CV_XGB - logical variable, use cross-validation for gradient boosting? Default: \code{CV_XGB = TRUE}.
@@ -78,7 +79,8 @@
 #'
 #' ps_hat_RF <-  p_score(obj_p_score = obj_p_score_RF,
 #'                      model_formula = A ~ X1 + (1|group),
-#'                      tune_RF = FALSE)
+#'                      tune_RF = FALSE,
+#'                      clust_RF = FALSE)
 #'
 #' # XGB
 #'
@@ -161,7 +163,8 @@ p_score.MQ <- function(obj_p_score,
 
 p_score.RF <- function(obj_p_score,
                        model_formula,
-                       tune_RF = FALSE, ...) {
+                       tune_RF = FALSE,
+                       clust_RF = TRUE, ...) {
 
   data_p_score <- obj_p_score$data_p_score
 
@@ -176,11 +179,22 @@ p_score.RF <- function(obj_p_score,
   clusters = formatted_data$cluster_sample
 
   if (tune_RF) {
-    ps_fit <- regression_forest(X, Y,
-                                clusters = clusters,
-                                tune.parameters = "all")
+    if (clust_RF) {
+      ps_fit <- regression_forest(X, Y,
+                                  clusters = clusters,
+                                  tune.parameters = "all")
+    } else {
+      ps_fit <- regression_forest(X, Y,
+                                  tune.parameters = "all")
+
+    }
+
   } else {
-    ps_fit <- regression_forest(X, Y, clusters = clusters)
+    if (clust_RF) {
+      ps_fit <- regression_forest(X, Y, clusters = clusters)
+    } else {
+      ps_fit <- regression_forest(X, Y)
+    }
   }
 
   ps_hat <- c(ps_fit$predictions)

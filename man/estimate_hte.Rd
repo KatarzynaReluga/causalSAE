@@ -51,6 +51,7 @@ estimate_hte(...)
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
@@ -70,6 +71,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
@@ -81,6 +83,7 @@ using gradient boosting, default: \code{CV_XGB = TRUE},
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.
@@ -100,12 +103,12 @@ Internal generic function to estimate hte
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{OR}: Estimate heterogeneous treatment effects using OR
+\item \code{estimate_hte(OR)}: Estimate heterogeneous treatment effects using OR
 
-\item \code{IPW}: Estimate heterogeneous treatment effects using IPW
+\item \code{estimate_hte(IPW)}: Estimate heterogeneous treatment effects using IPW
 
-\item \code{NIPW}: Estimate heterogeneous treatment effects using NIPW
+\item \code{estimate_hte(NIPW)}: Estimate heterogeneous treatment effects using NIPW
 
-\item \code{AIPW}: Estimate heterogeneous treatment effects using AIPW
+\item \code{estimate_hte(AIPW)}: Estimate heterogeneous treatment effects using AIPW
+
 }}
-

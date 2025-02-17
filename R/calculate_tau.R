@@ -119,18 +119,18 @@ fct_treat_untreat <- function(subpopulation, type_tau) {
   weights_untreat <- (1 - A) / (1 - p_score)
 
   if (type_tau == "HT") {
-    tau_treat <- mean(tau_treat_ind)
-    tau_untreat <- mean(tau_untreat_ind)
+    tau_treat <- mean(tau_treat_ind, na.rm = TRUE)
+    tau_untreat <- mean(tau_untreat_ind, na.rm = TRUE)
     tau <- tau_treat - tau_untreat
- } else if (type_tau == "H") {
+  } else if (type_tau == "H") {
     tau_treat <- sum(tau_treat_ind) / sum(weights_treat)
-    tau_untreat <- sum(tau_untreat_ind) / sum(weights_untreat)
+    tau_untreat <- sum(tau_untreat_ind, na.rm = TRUE) / sum(weights_untreat, na.rm = TRUE)
     tau <- tau_treat - tau_untreat
- } else {
-    tau_treat <- mean(tau_treat_AIPW)
-    tau_untreat <- mean(tau_untreat_AIPW)
+  } else {
+    tau_treat <- mean(tau_treat_AIPW, na.rm = TRUE)
+    tau_untreat <- mean(tau_untreat_AIPW, na.rm = TRUE)
     tau <- tau_treat - tau_untreat
- }
+  }
 
   output <- data.frame(tau_treat = tau_treat,
                        tau_untreat = tau_untreat,

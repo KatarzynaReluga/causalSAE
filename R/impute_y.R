@@ -8,6 +8,7 @@
 #' @param method Estimation method, choose between: \code{EBLUP}, \code{MQ}, \code{RF}, \code{XGB}.
 #' @param type_model Type of outcome.
 #' @param tune_RF Tune parameters in random forest? Default = FALSE.
+#' @param clust_RF Use clustering in random forest? Default = TRUE
 #' @param xgboost_params List with parameters to run xgboost:
 #' \itemize{
 #'  \item CV_XGB - logical variable, use cross-validation for gradient boosting? Default: TRUE.
@@ -94,7 +95,8 @@
 #'                    data_sample,
 #'                    data_out_of_sample,
 #'                    method = "RF",
-#'                    tune_RF = TRUE,
+#'                    tune_RF = FALSE,
+#'                    clust_RF = FALSE,
 #'                    xgboost_params = list(CV_XGB = TRUE,
 #'                                          nfolds = 5))
 #'
@@ -115,6 +117,7 @@ impute_y <- function(model_formula,
                      method = c("EBLUP", "MQ", "RF", "XGB"),
                      type_model = "gaussian",
                      tune_RF = FALSE,
+                     clust_RF = TRUE,
                      xgboost_params = list(CV_XGB = TRUE,
                                            nfolds = 5,
                                            nrounds = 50),
@@ -138,6 +141,7 @@ impute_y <- function(model_formula,
   y_hat <- fit_y(mutated_obj,
                  type_model = type_model,
                  tune_RF = tune_RF,
+                 clust_RF = clust_RF,
                  xgboost_params = xgboost_params)
 
   output <- y_hat
@@ -195,6 +199,7 @@ impute_y <- function(model_formula,
       y_hatb <- fit_y(mutated_obj_b,
                       type_model = type_model,
                       tune_RF = tune_RF,
+                      clust_RF = clust_RF,
                       xgboost_params = xgboost_params)
 
 

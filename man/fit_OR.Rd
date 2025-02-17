@@ -15,6 +15,7 @@ fit_OR(obj_hte, params_OR, params_bootstrap)
 \item method - estimation method, choose between: \code{EBLUP},
 \code{MQ}, \code{RF}, \code{XGB},
 \item tune_RF - tune random forest parameters,
+\item clust_RF - add clustering to random forest,
 \item xgboost_params - list of parameters to obtain predictions
 using gradient boosting, default: \code{CV_XGB = TRUE},
 \code{nfolds = 5}, \code{nrounds = 50}.

@@ -5,22 +5,20 @@
 \title{Residual bootstrap}
 \usage{
 residual_bootstrap(
-  y,
   y_hat,
   data_sample,
   n_boot = 250,
-  type_boot = c("br1", "br2", "br3", "br4", "br5"),
+  type_boot = c("br1", "br2", "br3", "br4", "br5", "br6", "br7"),
   boot_seed = 10,
-  rand_clust = FALSE,
+  cent_resid = TRUE,
+  c_Win = 3,
   ...
 )
 }
 \arguments{
-\item{y}{Vector of true outcomes}
-
 \item{y_hat}{Vector of estimated outcomes}
 
-\item{data_sample}{Sample data with group indicator}
+\item{data_sample}{Sample data}
 
 \item{n_boot}{Number of bootstrap samples}
 
@@ -29,7 +27,9 @@ residual_bootstrap(
 
 \item{boot_seed}{Seed to repeat bootstrap sampling}
 
-\item{rand_clust}{Random clusters}
+\item{cent_resid}{Center residuals? Default: TRUE}
+
+\item{c_Win}{Constant to Winsorize residuals at c_rob times robust scale estimate}
 
 \item{...}{Additional parameters}
 }

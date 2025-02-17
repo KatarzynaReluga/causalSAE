@@ -36,18 +36,20 @@ fit_y.EBLUP <- function(obj_fit_y,
                         type_model,
                         params_bootstrap,
                         ...) {
-
   data_sample = obj_fit_y$data_sample
   model_formula  = obj_fit_y$model_formula
 
   if (type_model == "gaussian") {
     outcome_fit <- lmer(formula = model_formula, data = data_sample)
   } else {
-    outcome_fit <- glmer(formula = model_formula, data = data_sample, family = type_model)
+    outcome_fit <-
+      glmer(formula = model_formula,
+            data = data_sample,
+            family = type_model)
   }
 
-#  y_hat_sample <- unname(predict(outcome_fit,
-#                                 newdata = data_sample))
+  #  y_hat_sample <- unname(predict(outcome_fit,
+  #                                 newdata = data_sample))
 
   y_hat_sample <- unname(predict(outcome_fit))
 
@@ -70,14 +72,15 @@ fit_y.EBLUP <- function(obj_fit_y,
 fit_y.MQ <- function(obj_fit_y,
                      type_model,
                      ...) {
-
   data_sample = obj_fit_y$data_sample
   model_formulaMQ = obj_fit_y$model_formula
 
-  outcome_fit = mquantreg(formula = model_formulaMQ,
-                          data = data_sample,
-                          q  = 0.5,
-                          method = type_model)
+  outcome_fit = mquantreg(
+    formula = model_formulaMQ,
+    data = data_sample,
+    q  = 0.5,
+    method = type_model
+  )
 
   y_hat_sample <- predict(outcome_fit,
                           newdata = data_sample,
@@ -101,20 +104,35 @@ fit_y.MQ <- function(obj_fit_y,
 fit_y.RF <- function(obj_fit_y,
                      type_model,
                      tune_RF,
+                     clust_RF,
                      ...) {
   X = obj_fit_y$X
   Y = obj_fit_y$Y
   clusters = obj_fit_y$clusters_sample
-   if (tune_RF) {
-       test  = "try-error"
-    while(test == "try-error") {
-      outcome_fit <-  try(regression_forest(X, Y,
-                                            clusters = clusters,
-                                            tune.parameters = "all"), silent = TRUE)
+  if (tune_RF) {
+    test  = "try-error"
+    while (test == "try-error") {
+      if (clust_RF) {
+        outcome_fit <-  try(regression_forest(X, Y,
+                                              clusters = clusters,
+                                              tune.parameters = "all"),
+                            silent = TRUE)
+      } else {
+        outcome_fit <-  try(regression_forest(X, Y,
+                                              tune.parameters = "all"),
+                            silent = TRUE)
+
+      }
+
       test = class(outcome_fit)[1]
     }
   } else {
-    outcome_fit <- regression_forest(X, Y, clusters = clusters)
+    if (clust_RF) {
+      outcome_fit <- regression_forest(X, Y, clusters = clusters)
+    } else {
+      outcome_fit <- regression_forest(X, Y)
+    }
+
   }
   y_hat_sample <- c(outcome_fit$predictions)
 
@@ -137,7 +155,6 @@ fit_y.XGB <- function(obj_fit_y,
                       type_model,
                       xgboost_params,
                       ...) {
-
   X = as.matrix(obj_fit_y$X)
   Y = unlist(obj_fit_y$Y)
 
@@ -146,24 +163,32 @@ fit_y.XGB <- function(obj_fit_y,
   nrounds = xgboost_params$nrounds
 
   if (CV_XGB) {
-
-    xgboost_cv <- xgb.cv(data = X, label = Y,
-                         nfold = nfolds,
-                         nrounds = nrounds,
-                         verbose = FALSE)
+    xgboost_cv <- xgb.cv(
+      data = X,
+      label = Y,
+      nfold = nfolds,
+      nrounds = nrounds,
+      verbose = FALSE
+    )
     best_iter_xgb = which.min(xgboost_cv$evaluation_log$test_rmse_mean)
 
-    outcome_fit <- xgboost(data = X, label = Y,
-                           nrounds = best_iter_xgb,
-                           verbose = FALSE)
+    outcome_fit <- xgboost(
+      data = X,
+      label = Y,
+      nrounds = best_iter_xgb,
+      verbose = FALSE
+    )
     y_hat_sample <- predict(outcome_fit,
                             newdata = X,
                             iteration_range =  best_iter_xgb)
 
   } else {
-    outcome_fit <- xgboost(data = X, label = Y,
-                           nrounds = nrounds,
-                           verbose = FALSE)
+    outcome_fit <- xgboost(
+      data = X,
+      label = Y,
+      nrounds = nrounds,
+      verbose = FALSE
+    )
 
     y_hat_sample <- predict(outcome_fit,
                             newdata = X)
@@ -235,7 +260,6 @@ mutate_obj_fit <- function(...)
 #'
 
 mutate_obj_fit.EBLUP <- function(obj_fit_y, model_formula, ...) {
-
   output <- obj_fit_y
   output$model_formula <- model_formula
   class(output) <- class(obj_fit_y)
@@ -250,13 +274,12 @@ mutate_obj_fit.EBLUP <- function(obj_fit_y, model_formula, ...) {
 #'
 
 mutate_obj_fit.MQ <- function(obj_fit_y, model_formula, ...) {
-
-
   # Get the (predictor) variables
   vars <- attr(terms(model_formula), which = "term.labels")
 
   # Get the response
-  response <- as.character(attr(terms(model_formula), which = "variables")[[2]])
+  response <-
+    as.character(attr(terms(model_formula), which = "variables")[[2]])
 
   # Get the predictors without group variable
   predictor <- paste(vars[-length(vars)], collapse = " + ")
@@ -280,13 +303,13 @@ mutate_obj_fit.MQ <- function(obj_fit_y, model_formula, ...) {
 #'
 
 mutate_obj_fit.RF <- function(obj_fit_y, model_formula, ...) {
-
-
   # Get the (predictor) variables
 
-  formatted_data <- format_data(model_formula = model_formula,
-                                data_sample = obj_fit_y$data_sample,
-                                data_out_of_sample = obj_fit_y$data_out_of_sample)
+  formatted_data <- format_data(
+    model_formula = model_formula,
+    data_sample = obj_fit_y$data_sample,
+    data_out_of_sample = obj_fit_y$data_out_of_sample
+  )
 
   output <- formatted_data
   #  output$model_formula <- model_formula
@@ -304,13 +327,13 @@ mutate_obj_fit.RF <- function(obj_fit_y, model_formula, ...) {
 #'
 
 mutate_obj_fit.XGB <- function(obj_fit_y, model_formula, ...) {
-
-
   # Get the (predictor) variables
 
-  formatted_data <- format_data(model_formula = model_formula,
-                                data_sample = obj_fit_y$data_sample,
-                                data_out_of_sample = obj_fit_y$data_out_of_sample)
+  formatted_data <- format_data(
+    model_formula = model_formula,
+    data_sample = obj_fit_y$data_sample,
+    data_out_of_sample = obj_fit_y$data_out_of_sample
+  )
 
   output <- formatted_data
   #  output$model_formula <- model_formula
@@ -329,14 +352,14 @@ mutate_obj_fit.XGB <- function(obj_fit_y, model_formula, ...) {
 #mutate_obj_fit.SL <- function(obj_fit_y, model_formula, ...) {
 
 
-  # Get the (predictor) variables
+# Get the (predictor) variables
 
 #  formatted_data <- format_data(model_formula = model_formula,
 #                                data_sample = obj_fit_y$data_sample,
 #                                data_out_of_sample = obj_fit_y$data_out_of_sample)
 
 #  output <- formatted_data
-  #  output$model_formula <- model_formula
+#  output$model_formula <- model_formula
 
 #  class(output) <- class(obj_fit_y)
 
