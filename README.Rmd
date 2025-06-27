@@ -23,7 +23,7 @@ Reference: Reluga, Kong, Ranjbar, Salvati, van der Laan (2025). *The impact of j
 
 Available at [arXiv.org](https://www.arxiv.org/abs/2502.12376).
 
-In what follows, we use abbreviation R-2025 to refer to the article of Reluga, Kong, Ranjbar, Salvati, van der Laan (2025).
+In what follows, we use the abbreviation R-2025 to refer to the article by Reluga, Kong, Ranjbar, Salvati, van der Laan (2025).
 
 ## Installation
 
