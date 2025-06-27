@@ -132,7 +132,7 @@ functions in the R package **causalSAE**. Detailed instructions and all
 code are available in the directory
 [reluga2025_results](https://github.com/KatarzynaReluga/causalSAE/tree/main/simulations/reluga2025_results).
 
-Alongside the R files and Bash scripts, the directory includes:
+Alongside the R files and Shell scripts, the directory includes:
 
 1.  Additional algorithms to be added to the R package
     [SuperLearner](https://github.com/ecpolley/SuperLearner/tree/master),
